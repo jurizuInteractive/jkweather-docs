@@ -66,8 +66,43 @@ A Saharan-style dust event. Thermodynamically it warms the air (about +3 C),
 drops humidity and biases toward anticyclonic pressure. Visually it tints the
 fog ochre (`CalimaTinte`), adds haze density (`CalimaNieblaExtra`) and raises the
 atmosphere's Mie scattering (`CalimaMieFactor`) so the sky turns
-milky-ochre and the Sun is veiled. Trigger it like any other event:
-`Weather.Event 5`.
+milky-ochre and the Sun is veiled. It also drives the same volumetric-fog
+extinction ramp as the Fog event (`ExtincionVolumetricaMax`, see the fog
+guide's god-ray note below), so a dense dust storm shows visible sunbeams
+too, not just a flat tint. Trigger it like any other event: `Weather.Event 5`.
+
+An optional Niagara system (**Dust System**, empty = `/JKWeather/VFX/NS_Dust`)
+adds airborne dust particles near eye level (`AlturaEmisorCalima`, much lower
+than the precipitation emitter — dust hangs in suspension, it doesn't fall),
+driven by `GetDustHaze01()` and the local wind. Same degrade-gracefully rule
+as the thermal particles: without the asset, dust haze stays a sky/fog effect
+with no ground-level particle. **The asset itself is not shipped yet** — it
+needs the same by-hand authoring in the Niagara editor as the other
+precipitation systems (see `precipitation_vfx_guide.md`); the C++ side is
+ready and wired to the contract below.
+
+Brief for authoring `NS_Dust`: soft, large, low-opacity tan/ochre sprites
+(much bigger and dimmer than a raindrop or snowflake — this is haze, not
+grit), spawned in a wide flattened volume near ground/eye level rather than
+falling from above, drifting mostly horizontally with `WindVelocity`, very
+low or no gravity. Same User Parameter contract as the other systems:
+`Intensity` (0-1), `SpawnRate` (part/s), `WindVelocity` (cm/s, world space),
+`Gust` (0-1).
+
+### Ambient turbidity (every day, not just dust haze)
+Dust haze above models the Saharan *extreme*; **Ambient Turbidity**
+(`bTurbidezAmbiental`) models the ordinary aerosol that is always in the air
+to some degree — humidity haze and wind-lofted dust — continuously, without
+forcing an event. It adds its own contribution to the atmosphere's Mie
+scattering (`TurbidezPorHumedad` above 40% relative humidity,
+`TurbidezPorViento` scaling with wind speed), weighted up to
+`TurbidezBoostHorizonte`x as the Sun or Moon nears the horizon (within 20
+degrees). That is the physical reason golden hour looks the way it does: at
+low angles light crosses far more atmosphere, so the same aerosol scatters
+and reddens it more, and the Sun reads as bigger and softer. It does **not**
+drive the volumetric-fog god-ray ramp (that stays opt-in via the Fog event
+and dust haze only) — turning volumetric fog on every ordinary humid day has
+a real GPU cost that this feature does not spend on your behalf.
 
 ### Blizzard — *ventisca* (emergent)
 There is **no blizzard command**: it emerges naturally when it is **snowing**

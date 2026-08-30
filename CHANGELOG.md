@@ -10,6 +10,27 @@ save format stays v6.
 
 ### Added
 
+- **Ambient turbidity: golden hour for every sunset, not just dust storms.**
+  Dust haze (`Weather.Event 5`) already boosted the atmosphere's Mie
+  scattering for a Saharan extreme; `bTurbidezAmbiental` now adds a
+  continuous, everyday version of the same physics — ordinary humidity and
+  wind-lofted dust scatter light too, weighted up to `TurbidezBoostHorizonte`x
+  as the Sun or Moon nears the horizon (light crosses far more atmosphere at
+  low angles, so the same aerosol reddens and softens it more: the real
+  reason golden hour looks the way it does, and why the Sun reads as bigger
+  near the horizon). Tunable via `TurbidezPorHumedad` / `TurbidezPorViento`;
+  off switch included (`bTurbidezAmbiental`). CPU-only property write, no
+  added render cost.
+- **Dust haze gets an optional airborne particle (`NS_Dust`) and drives
+  god rays.** Every other precipitation type had a dedicated Niagara system
+  except dust haze, which was sky/fog-only. The renderer now supports an
+  optional dust particle (`SistemaCalima`, empty = `/JKWeather/VFX/NS_Dust`)
+  placed near eye level rather than falling from above (`AlturaEmisorCalima`);
+  same degrade-gracefully rule as the thermal particles if the asset is
+  absent. Dust haze also now drives the same volumetric-fog extinction ramp
+  as the Fog event, so a dense dust storm shows visible sunbeams instead of a
+  flat tint. The asset itself still needs authoring in the Niagara editor —
+  see `Docs/precipitation_vfx_guide.md` for the brief; the C++ side is ready.
 - **Multiplayer (v7): server-authoritative replication, zero setup.** The
   server's subsystem auto-spawns a transient `AJKWeatherReplicator`
   (`bAlwaysRelevant`, ~2 Hz) that delta-replicates the full
@@ -154,6 +175,9 @@ save format stays v6.
 - A note in the automation suite explaining that the "Condition failed" lines
   in the log are the engine's own self-tests sharing the batch, not JKWeather
   failures.
+- Publisher name corrected from "JuRiUz Interactive" to "JuRizU Interactive"
+  (transposed letters) in `JKWeather.uplugin` and `LICENSE.txt`; `DocsURL`
+  now points at the public documentation repository.
 - README now warns that closing the editor right after running one of the
   `Scripts/` Python utilities from the Output Log can crash it, and recommends
   restarting the editor before continuing rather than closing it directly. A

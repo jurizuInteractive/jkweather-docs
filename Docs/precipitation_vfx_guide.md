@@ -110,7 +110,41 @@ it whiten — and hush.
 simulation. Natural hail: `Weather.Event storm` and wait for a burst
 (`HailChancePerMinute`, ~2.5 min each).
 
-**Audio.** `S_RainLoop` / `S_HailLoop` are imported by
+## Dust haze particles (NS_Dust, optional)
+
+Airborne dust for the *calima* event (`Weather.Event 5`, see `skyfx_guide.md`).
+**Not shipped** — author it like `NS_Hail`, adapting the Fountain skeleton
+instead of duplicating rain:
+
+1. New Niagara System from the **Fountain** template, name it `NS_Dust`.
+2. Same 4 User Parameters as the table above (`Intensity`, `SpawnRate`,
+   `WindVelocity`, `Gust`).
+3. **Shape Location**: a wide, flattened Box (5000 × 5000 × 400) centered on
+   the emitter — dust hangs in a shallow layer, it doesn't fall from a point.
+4. **Initialize Particle**: Lifetime 4-8 s (long-lived, it drifts rather than
+   falls); Sprite Size Uniform **60-140** (much bigger and softer than a
+   raindrop or flake — this reads as haze, not grit); Color A (opacity) low,
+   `User.Intensity` × 0.12-0.18, tan/ochre tint to match `CalimaTinte`.
+5. Delete the fountain's downward velocity. Add **Add Velocity** =
+   `User.WindVelocity` × 0.5 (dust drifts with the air mass, doesn't fight
+   it) plus a small **Curl Noise Force** (Strength ≈ 20, Frequency ≈ 0.3) for
+   a lazy, non-uniform drift. No gravity, or a very small one (-20 to -50).
+6. **Sprite Renderer**: Alignment = `Camera Facing`; a soft radial-mask
+   unlit translucent material, additive-light not additive-color (dust
+   should darken/mute what's behind it a little, not glow).
+7. Save at `/JKWeather/VFX/NS_Dust`. The renderer picks it up automatically
+   (or assign **Dust System** under `Weather|SkyFX`); without it, dust haze
+   stays a sky/fog-only effect with no ground-level particle, no warning.
+
+The renderer places the emitter much lower than rain/snow (`AlturaEmisorCalima`,
+default 250 cm above the camera vs. 900 cm) and does not apply the
+falling-rain drift compensation — it just follows the camera and the local
+wind. Test with `Weather.Event 5` (there is no dedicated `VFXTest` mode for
+it, since it isn't a precipitation type).
+
+## Audio note
+
+`S_RainLoop` / `S_HailLoop` are imported by
 `Scripts/importar_audio_clima.py` from `Resources/SourceArt/Audio/lluvia_loop.wav`
 and `granizo_loop.wav` (procedural placeholders — drop your real WAVs over them
 and re-run the script with `REEMPLAZAR = True`). Volume follows intensity; under
