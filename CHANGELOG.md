@@ -31,6 +31,12 @@ save format stays v6.
   as the Fog event, so a dense dust storm shows visible sunbeams instead of a
   flat tint. The asset itself still needs authoring in the Niagara editor —
   see `Docs/precipitation_vfx_guide.md` for the brief; the C++ side is ready.
+  Its material does not need hand-authoring, though:
+  `Scripts/crear_materiales_precipitacion.py` (v1.1) now also generates
+  `M_DustMote`, tinted to match `CalimaTinte`, with the same procedural,
+  texture-free generator as the other four precipitation materials. The
+  particle graph itself stays a by-hand job in the Niagara editor — its
+  module stack has no Python API to script, unlike materials.
 - **Multiplayer (v7): server-authoritative replication, zero setup.** The
   server's subsystem auto-spawns a transient `AJKWeatherReplicator`
   (`bAlwaysRelevant`, ~2 Hz) that delta-replicates the full

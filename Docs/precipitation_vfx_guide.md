@@ -113,28 +113,62 @@ simulation. Natural hail: `Weather.Event storm` and wait for a burst
 ## Dust haze particles (NS_Dust, optional)
 
 Airborne dust for the *calima* event (`Weather.Event 5`, see `skyfx_guide.md`).
-**Not shipped** — author it like `NS_Hail`, adapting the Fountain skeleton
-instead of duplicating rain:
+**Not shipped.** Unlike the materials, the Niagara particle graph itself
+cannot be scripted — Epic's Python API has no exposed functions for editing
+an emitter's module stack (confirmed on the Epic Developer Community forums:
+["Niagara Python Emitter"](https://forums.unrealengine.com/t/niagara-python-emitter/2540951)),
+which is exactly why `NS_Rain`/`NS_Snow`/`NS_Hail`/`NS_Thermal` were all
+hand-authored rather than generated like the materials. The material *is*
+scripted, though — see step 0.
 
-1. New Niagara System from the **Fountain** template, name it `NS_Dust`.
-2. Same 4 User Parameters as the table above (`Intensity`, `SpawnRate`,
-   `WindVelocity`, `Gust`).
-3. **Shape Location**: a wide, flattened Box (5000 × 5000 × 400) centered on
-   the emitter — dust hangs in a shallow layer, it doesn't fall from a point.
-4. **Initialize Particle**: Lifetime 4-8 s (long-lived, it drifts rather than
-   falls); Sprite Size Uniform **60-140** (much bigger and softer than a
-   raindrop or flake — this reads as haze, not grit); Color A (opacity) low,
-   `User.Intensity` × 0.12-0.18, tan/ochre tint to match `CalimaTinte`.
-5. Delete the fountain's downward velocity. Add **Add Velocity** =
-   `User.WindVelocity` × 0.5 (dust drifts with the air mass, doesn't fight
-   it) plus a small **Curl Noise Force** (Strength ≈ 20, Frequency ≈ 0.3) for
-   a lazy, non-uniform drift. No gravity, or a very small one (-20 to -50).
-6. **Sprite Renderer**: Alignment = `Camera Facing`; a soft radial-mask
-   unlit translucent material, additive-light not additive-color (dust
-   should darken/mute what's behind it a little, not glow).
-7. Save at `/JKWeather/VFX/NS_Dust`. The renderer picks it up automatically
+### Step 0 — generate the material
+
+`M_DustMote` is part of `Scripts/crear_materiales_precipitacion.py` (v1.1)
+alongside the other four precipitation materials — same procedural,
+texture-free generator, tinted to match `CalimaTinte`. Run it once from the
+Output Log (`py ".../Scripts/crear_materiales_precipitacion.py"`) before
+building the system below; you will not need to touch a single material
+node.
+
+### Steps 1-9 — the particle system (by hand, in the Niagara editor)
+
+1. Content Browser (`Plugins/JKWeather Content/VFX`) → right click → **FX →
+   Niagara System** → template **Fountain** → name it `NS_Dust`.
+2. **Parameters panel** (`Window > Parameters` if hidden) → category **User**
+   → `+` → create the same 4 User Parameters as the table above: `Intensity`
+   (float), `SpawnRate` (float), `WindVelocity` (Vector), `Gust` (float).
+3. **Emitter Properties** (top of the emitter's stack): Sim Target =
+   `GPUCompute Sim`; enable **Fixed Bounds** ≈ 5000×5000×400 (the C++ imposes
+   its own runtime bounds via `SetSystemFixedBounds`, but this keeps the
+   in-editor preview from culling itself); Loop Behavior = `Infinite`.
+4. **Shape Location** (Particle Spawn group, replacing the template's
+   default cone/sphere): Shape = **Box**, size (5000, 5000, 400) — a wide,
+   flattened layer centered on the emitter. Dust hangs in a shallow layer;
+   it doesn't fall from a point like rain.
+5. **Initialize Particle**: Lifetime Uniform 4-8 s (long-lived, it drifts
+   rather than falls); Sprite Size Uniform X/Y **60-140** (much bigger and
+   softer than a raindrop or flake — this reads as haze, not grit); Color
+   Alpha linked to `User.Intensity` × 0.15 (via a *Multiply Float* Dynamic
+   Input if there's no direct multiply field).
+6. **Spawn Rate** (Emitter Update, or wherever the Fountain template put its
+   rate module): link it to `User.SpawnRate`.
+7. **Particle Update**: delete the template's downward **Add Velocity** /
+   **Gravity Force**. Add **Add Velocity** = `User.WindVelocity` × 0.5 (dust
+   drifts with the air mass, it doesn't fight it) and a small **Curl Noise
+   Force** (Strength ≈ 20, Frequency ≈ 0.3) for a lazy, non-uniform drift.
+   Optional faint settle: Gravity Force Z -20 to -50. Drag high, 1.5-2.0, so
+   it never picks up runaway speed.
+8. **Sprite Renderer** (Render group): Material = `M_DustMote`; Alignment =
+   `Unaligned`; Facing Mode = `Face Camera Plane` (not "Automatic") — same
+   convention as `NS_Snow`/`NS_Hail`/`NS_Thermal`.
+9. Save at `/JKWeather/VFX/NS_Dust`. The renderer picks it up automatically
    (or assign **Dust System** under `Weather|SkyFX`); without it, dust haze
    stays a sky/fog-only effect with no ground-level particle, no warning.
+
+Test with `Weather.Event 5`. The four numbers actually worth tuning by eye in
+PIE are Sprite Size, the Alpha multiplier, Curl Noise Strength and the wind
+velocity multiplier — everything else (activation, position, intensity) is
+already driven by the C++.
 
 The renderer places the emitter much lower than rain/snow (`AlturaEmisorCalima`,
 default 250 cm above the camera vs. 900 cm) and does not apply the
