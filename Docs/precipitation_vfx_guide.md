@@ -138,9 +138,15 @@ node.
    → `+` → create the same 4 User Parameters as the table above: `Intensity`
    (float), `SpawnRate` (float), `WindVelocity` (Vector), `Gust` (float).
 3. **Emitter Properties** (top of the emitter's stack): Sim Target =
-   `GPUCompute Sim`; enable **Fixed Bounds** ≈ 5000×5000×400 (the C++ imposes
-   its own runtime bounds via `SetSystemFixedBounds`, but this keeps the
-   in-editor preview from culling itself); Loop Behavior = `Infinite`.
+   `GPUCompute Sim`; enable **Fixed Bounds** and set it as a Min/Max box,
+   **Min (-2600, -2600, -300)**, **Max (2600, 2600, 300)** — half the Shape
+   Location box below (2500/2500/200) plus ~100 cm of margin so a sprite
+   born near the edge (radius up to 70, plus wind drift) doesn't get culled
+   before it can fade out. This box is local to the component, so it does
+   NOT need to account for `AlturaEmisorCalima` — the C++ already moves the
+   whole component there via `SetWorldLocation`. The C++ also imposes its own
+   runtime bounds via `SetSystemFixedBounds`, but this keeps the in-editor
+   preview from culling itself. Loop Behavior = `Infinite`.
 4. **Shape Location** (Particle Spawn group, replacing the template's
    default cone/sphere): Shape = **Box**, size (5000, 5000, 400) — a wide,
    flattened layer centered on the emitter. Dust hangs in a shallow layer;
