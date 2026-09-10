@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the guides first
+    url: https://github.com/jurizuInteractive/jkweather-docs
+    about: Seven subsystem guides plus the full changelog. Most questions are answered there.
+  - name: Private enquiry (licensing, commercial)
+    url: mailto:jurizu.interactive@gmail.com
+    about: For anything that should not be public. Bugs and usage questions are better as issues - the answer helps the next person too.

@@ -1,0 +1,76 @@
+JKWeather - Weather & Day/Night System for Unreal Engine
+Copyright (c) 2026 JuRizU Interactive. All rights reserved.
+Contact: jurizu.interactive@gmail.com
+
+DISTRIBUTION AND USE
+This product is distributed exclusively through Fab (fab.com). Your license
+to use it is governed by the Fab End User License Agreement in effect at the
+time of purchase: https://www.fab.com/eula
+In short (the EULA prevails): you may use and modify the plugin, including
+its C++ source, inside your own projects and shipped products; you may not
+redistribute or resell the plugin itself, in whole or substantial part, as a
+tool, library or asset.
+
+SOURCE CODE
+Full C++ source is included. Modifications you make are yours; no obligation
+to share them. Updates through Fab may overwrite local changes to the plugin
+folder - keep custom edits in your project where possible.
+
+AI DISCLOSURE
+The sound effects and the twinkle-noise / starfield textures in this product
+were procedurally generated with an AI-assisted toolchain on 2026-08-24,
+random seed 20260823. The original generator scripts were not preserved.
+Scripts/generar_audio_fuente.py and Scripts/generar_texturas_fuente.py are
+reconstructions written after the fact: they document the synthesis method,
+demonstrate that no third-party recordings, samples or imagery are needed
+to produce these assets, and regenerate an equivalent original set from a
+documented seed - comparable in character and format to the shipped files,
+not byte-identical copies of them. Both scripts ship with the plugin.
+This is also disclosed in the Fab listing.
+
+THIRD-PARTY NOTICES AND SOURCE-ART PROVENANCE
+The plugin depends on the Niagara plugin (c) Epic Games, shipped with
+Unreal Engine.
+
+The runtime assets under Content/ are derived from the source art listed
+below (Resources/SourceArt/ and Scripts/ are development-only and are not
+part of the distributed package). Per-file provenance:
+
+- Resources/SourceArt/T_CieloEstrellas_SinLuna.png (starfield equirect):
+  ORIGINAL WORK. Procedurally synthesized fictional star field (random star
+  catalogue + fictional galactic band) with the project's own generator
+  toolchain, seed 20260823 (see AI DISCLOSURE above). No third-party imagery. Earlier development versions used an
+  ESO-derived panorama; that material has been fully replaced and none of it
+  remains in this or later releases.
+- Resources/SourceArt/full-moon.jpg (lunar disc):
+  "Moon Mosaic" - full-Moon photomosaic assembled from 1,231 Lunar
+  Reconnaissance Orbiter Narrow Angle Camera images (summer 2018), by NASA's
+  Scientific Visualization Studio, https://svs.gsfc.nasa.gov/5001/
+  NASA imagery; may be used for commercial purposes under NASA's Media Usage
+  Guidelines. Use of this imagery does not state or imply endorsement by
+  NASA. Credit: NASA's Scientific Visualization Studio. Changes made:
+  converted and resized for use as a billboard texture.
+- Resources/SourceArt/T_RuidoTitileo.png (twinkle noise):
+  ORIGINAL WORK. Tileable 1/f noise synthesized with the project's own
+  generator toolchain, seed 20260823 (see AI DISCLOSURE above). No
+  third-party material.
+- Resources/SourceArt/Audio/lluvia_loop.wav,
+  Resources/SourceArt/Audio/granizo_loop.wav,
+  Resources/SourceArt/Audio/viento_aullido_loop.wav,
+  Resources/SourceArt/Audio/viento_rumor_loop.wav,
+  Resources/SourceArt/Audio/trueno_cercano.wav,
+  Resources/SourceArt/Audio/trueno_lejano.wav:
+  ORIGINAL WORKS. Procedurally synthesized (frequency-domain shaped noise and
+  scheduled synthetic events; seamless loops by construction) with the
+  project's own generator toolchain, seed 20260823 (see AI DISCLOSURE
+  above). Royalty-free; no
+  third-party recordings, samples or sound libraries involved.
+- Resources/Icon128.png (plugin icon):
+  ORIGINAL WORK. Vector-style icon rendered with the project's own
+  generator toolchain (see AI DISCLOSURE above). No third-party imagery.
+
+The NASA credit line above is also included in the product's Fab listing.
+
+NO WARRANTY
+Provided "as is", without warranty of any kind, to the extent permitted by
+the Fab EULA and applicable law.

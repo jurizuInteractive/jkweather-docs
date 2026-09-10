@@ -1,42 +1,30 @@
 # JKWeather — Changelog
 
-## Unreleased
+## 1.6.0
 
-Product-polish pass ahead of the Fab submission: packaging, documentation sync
-to 1.5.0, one long-requested config knob and type-safe public getters, plus an
-audit pass that found the knob itself was never wired to the ini. Two of those
-fixes DO change what you see (dust haze humidity and cloud layer altitude);
-save format stays v6.
+Multiplayer, and the audit pass that had to happen before it could ship.
+
+Server-authoritative replication with zero setup is the headline feature, and
+the store listing sells it — so it is cut as a release here rather than left
+under "Unreleased", where a buyer checking the changelog against the listing
+would have concluded the feature was not in the build they bought.
+
+Alongside it: packaging, a documentation sync, one long-requested config knob
+and type-safe public getters — plus a line-by-line audit that found the knob had
+never been wired to the ini, that seeded runs were not reproducible, that event
+durations varied by a factor of 288 with the length of the day, and that three
+separate pieces of the simulation were dead on network clients. Those are fixed
+below and each one is written up with what it broke and why.
+
+Behaviour changes you will see: dust haze humidity, cloud layer altitude, and
+**event durations at any `DayLengthRealMinutes` other than the factory 5**.
+Save format moves to **v8**: event timings become game hours, and the six
+runtime climate knobs finally travel with the state. v1-v7 saves load fine —
+event progress is preserved exactly, and settings a pre-v8 save never carried
+are left as configured rather than overwritten.
 
 ### Added
 
-- **Ambient turbidity: golden hour for every sunset, not just dust storms.**
-  Dust haze (`Weather.Event 5`) already boosted the atmosphere's Mie
-  scattering for a Saharan extreme; `bTurbidezAmbiental` now adds a
-  continuous, everyday version of the same physics — ordinary humidity and
-  wind-lofted dust scatter light too, weighted up to `TurbidezBoostHorizonte`x
-  as the Sun or Moon nears the horizon (light crosses far more atmosphere at
-  low angles, so the same aerosol reddens and softens it more: the real
-  reason golden hour looks the way it does, and why the Sun reads as bigger
-  near the horizon). Tunable via `TurbidezPorHumedad` / `TurbidezPorViento`;
-  off switch included (`bTurbidezAmbiental`). CPU-only property write, no
-  added render cost.
-- **Dust haze gets an optional airborne particle (`NS_Dust`) and drives
-  god rays.** Every other precipitation type had a dedicated Niagara system
-  except dust haze, which was sky/fog-only. The renderer now supports an
-  optional dust particle (`SistemaCalima`, empty = `/JKWeather/VFX/NS_Dust`)
-  placed near eye level rather than falling from above (`AlturaEmisorCalima`);
-  same degrade-gracefully rule as the thermal particles if the asset is
-  absent. Dust haze also now drives the same volumetric-fog extinction ramp
-  as the Fog event, so a dense dust storm shows visible sunbeams instead of a
-  flat tint. The asset itself still needs authoring in the Niagara editor —
-  see `Docs/precipitation_vfx_guide.md` for the brief; the C++ side is ready.
-  Its material does not need hand-authoring, though:
-  `Scripts/crear_materiales_precipitacion.py` (v1.1) now also generates
-  `M_DustMote`, tinted to match `CalimaTinte`, with the same procedural,
-  texture-free generator as the other four precipitation materials. The
-  particle graph itself stays a by-hand job in the Niagara editor — its
-  module stack has no Python API to script, unlike materials.
 - **Multiplayer (v7): server-authoritative replication, zero setup.** The
   server's subsystem auto-spawns a transient `AJKWeatherReplicator`
   (`bAlwaysRelevant`, ~2 Hz) that delta-replicates the full
@@ -58,7 +46,7 @@ save format stays v6.
   new `HasWeatherAuthority()` (BlueprintPure) exposes the side you are on.
   Late joiners sync on their first snapshot (which also aligns the client
   RNG with the server seeds). Standalone is untouched. New
-  `Docs/multiplayer_guide.md` with the architecture and a 7-point network
+  `Docs/multiplayer_guide.md` with the architecture and a 9-point network
   test checklist; new automation test `JKWeather.Net.BlendNetState`.
 - `DayLengthRealMinutes` ini key (`[/Script/JKWeather.WeatherSubsystem]`):
   real minutes per in-game day at speed 1 (default 5, clamped 0.5-1440).
@@ -135,6 +123,13 @@ save format stays v6.
   purpose.
 
 ### Changed
+- **The debug HUD now ships OFF, and can be toggled from Blueprint.** `Show
+  Debug HUD` defaulted to `true` on every new renderer actor while the README
+  promised, in as many words, that it "ships **off** by default on new renderer
+  actors". Fifteen lines of yellow text over the buyer's scene was the first
+  thing they saw after following Quick start A, with the manual telling them it
+  was off. It was also `EditAnywhere` only, so a game that wanted a "debug mode"
+  key could not implement one; it is now `BlueprintReadWrite` too.
 - **Contract fix (behaviour change):** `FJKAtmosphere.PhysicalFog01` now
   carries the RAW physical fog, exactly as its documentation always claimed,
   and the merged total (physical fog combined with the scheduled Fog event)
@@ -181,13 +176,6 @@ save format stays v6.
 - A note in the automation suite explaining that the "Condition failed" lines
   in the log are the engine's own self-tests sharing the batch, not JKWeather
   failures.
-- Publisher name corrected from "JuRiUz Interactive" to "JuRizU Interactive"
-  (transposed letters) in `JKWeather.uplugin` and `LICENSE.txt`; `DocsURL`
-  now points at the public documentation repository.
-- README now warns that closing the editor right after running one of the
-  `Scripts/` Python utilities from the Output Log can crash it, and recommends
-  restarting the editor before continuing rather than closing it directly. A
-  real fix (an in-editor commandlet instead of pasted Python) stays backlog.
 
 ### Removed
 - Two stale entries from the README's *Known limitations*, both of which the
@@ -198,7 +186,277 @@ save format stays v6.
   and the day-state getters now derive from elevation, so both regimes are
   modelled honestly. Replaced with what the code actually does.
 
+### Added
+- **A public support channel, and a preflight gate that keeps the studio's
+  identity separate from the author's.** `SupportURL` was empty — a buyer had
+  nowhere to write — and the README's Support section listed no contact at all.
+  Support now lives in the documentation repository's **GitHub Issues**, chosen
+  over a chat server on purpose: an answer written there is indexed and found by
+  whoever hits the same thing next, which is what turns support into
+  documentation instead of repeated work. The bug form makes the build
+  configuration and the network mode **required** fields, because the 34 console
+  commands do not exist in Shipping builds and several derived values are
+  recomputed locally on a non-authoritative client — a report missing those two
+  usually costs a round trip. The README says what to include
+  (engine version, platform, the `LogJKWeather` lines, and the one-block dump
+  `Weather.Sensors` produces), because a report without those costs a round
+  trip. The new preflight check refuses any personal identifier in the URLs the
+  editor's plugin browser shows, or in the files `FilterPlugin.ini` actually
+  ships — and it flagged, on its first run, that `DocsURL` still pointed at a
+  personal GitHub account. It also knows that a Discord invite defaults to
+  expiring after seven days, and warns to make it permanent: a dead support link
+  on a store page is worse than an empty field.
+- **Two more preflight gates, both for build configurations the plugin had never
+  been compiled in.** The first looks for symbols that only exist under
+  `#if !UE_BUILD_SHIPPING` / `WITH_EDITOR` guards but are *used* only from
+  inside them — a file-scope `static` in that position compiles away in Shipping
+  and then trips `unused-function` under warnings-as-errors. It also flags
+  headers whose conditional blocks the matching `.cpp` does not mirror. Every
+  build of this plugin so far has been Development Editor, and eight guarded
+  blocks (one of 459 lines, holding all 34 console commands) had never been
+  excluded for real. The check is static analysis: it does not replace packaging
+  a Shipping build once, but it catches the cheap regression afterwards.
+  The second reports whether the host project has a `Server` target at all —
+  without one the dedicated-server binary cannot be built, so the renderer's
+  `IsNetMode(NM_DedicatedServer)` guard cannot be exercised. The multiplayer
+  guide's checklist now spells out how to build and run that binary, and what
+  the server log must and must not contain.
+
 ### Fixed
+- **Runtime climate settings survive a save and reach network clients.** Six
+  values could be changed at runtime — maritime factor, yearly rain scale, ENSO
+  regional sign, the manual climate anomaly, longitude and timezone — and none
+  of them were in `FJKWeatherState`. Apply the *tropical* preset (latitude 8,
+  maritime 0.65, rain x1.6, ENSO sign +1), autosave, reload: the latitude came
+  back (it has travelled since v4) but maritime damping and rainfall reverted to
+  the ini's values, leaving a half-applied climate. A `SetClimateAnomaly` set by
+  a story event vanished the same way. And the subsystem's own header claimed
+  those knobs "only tune the client's local prediction and the next snapshot
+  corrects it" — which cannot be true of values no snapshot carries. All six are
+  now stored, restored and replicated as **save format v8**; the derived
+  civil-time offset is recomputed from longitude and timezone on load with the
+  same formula `SetSiteCoordinates` uses.
+  Saves older than v8 deliberately do **not** overwrite the configured values —
+  loading an old game must not silently wipe a preset the project had applied —
+  and a new test, `JKWeather.SaveState.V8RuntimeKnobs`, locks both halves of
+  that contract. `FJKClimateAnomaly`'s own fields gained the `SaveGame` flag:
+  the save archive filters on it recursively, so without it the nested anomaly
+  would have serialised empty.
+- **A network client no longer consumes the seeded RNG.** `WeatherSeed` promises
+  "same seed, same history", and the store listing sells reproducibility as the
+  simulation argument — but two client-side paths drew from `WeatherRng` every
+  tick, shifting the client's stream away from the server's. Both are closed,
+  and they needed different answers:
+  *The pressure front redraw* is now authority-only. `PressureTarget` travels in
+  `FJKWeatherState` and the snapshot snaps it, so a locally drawn front was
+  overwritten anyway — it was wasted work as well as a broken promise.
+  *The hail dice* could not simply be gated: precipitation type is not
+  replicated, so a client that never rolls would **never see hail**, undoing the
+  client-side hail that the electrical-activity fix had just made possible. The
+  streams are separated instead — the authority rolls `WeatherRng`, so
+  server-side hail stays a function of `WeatherSeed`; the client rolls the
+  global `FMath` stream. Client hail falls at slightly different moments per
+  client, which is what the multiplayer guide already documents for every
+  non-replicated derived value.
+  Every remaining `WeatherRng` consumer was audited: clock advance, lightning
+  scheduler, strike generation, event roll and event activation all sit behind
+  the authority branch or an authority guard. **No client path touches the
+  seeded stream any more.**
+- **Lightning cadence now runs on the game clock.** The strike scheduler
+  integrated in real seconds while the storm event feeding it runs in game
+  hours. The mismatch predates this release but the event time-base fix
+  *widened* it: the event now scales with both `TimeMultiplier` and
+  `DayLengthRealMinutes`, and the scheduler scaled with neither. Measured on the
+  bench without looking for it — a day record reading `rain 99.0 mm (24.0 h) |
+  14 strike(s)`: twenty-four game hours of thunderstorm rain and fourteen bolts,
+  exactly the number that fits in the ~100 *real* seconds the run lasted.
+  The strike interval, the initial wait and the storm cell's drift are now kept
+  in game hours, converted from their authored values on the same reference
+  clock the event durations use — so cadence at factory settings is identical to
+  before, and correct at every other day length. `GetSecondsSinceLastStrike()`
+  and the thunder delay deliberately stay in **real** seconds: the speed of
+  sound and the flash decay are physics at the player's ear, not simulated time.
+- **Lightning multicast is `Unreliable`.** A flash and a thunderclap are
+  cosmetic; losing one breaks nothing, but a burst of reliable multicasts during
+  a storm can fill the channel's reliable buffer and cause hitching or a client
+  disconnect. It now degrades where it should.
+- **`SetDayOfYear` actually schedules the destination day's event.** It set the
+  once-per-day lock to -1 with a comment saying the destination day "can roll a
+  fresh event", but `TryGenerateEvent()` was only ever called from the day
+  rollover, so the -1 sat inert and a day you jumped to got no natural weather
+  event until the *next* rollover. The contract is now honoured rather than
+  merely documented.
+- **The save-version test is no longer tautological.** `SaveState.RoundTrip`
+  asserted "version rewritten as current" while feeding in the current version,
+  so it passed whether `GetWeatherState` stamps the version or merely preserves
+  it — two different contracts. The round-trip assertion stays, and the stamping
+  contract is now proven separately by feeding a v3 state and requiring v7 out.
+- **The moon rises on the right side of the night again.** The lunar transit was
+  computed as `solar noon − phase offset`. The moon's ecliptic longitude is
+  built as `sun longitude + elongation`, so it sits **east** of the sun as the
+  offset grows — and a body east of the sun culminates *later*, not earlier. The
+  transit is `solar noon + offset`.
+  The default hid it: at `Moon Phase Offset = 12` (full moon) both signs give
+  midnight, because a full moon is symmetric about ±12. But the synodic cycle
+  runs by default, so within a few in-game days the offset leaves 12 and the
+  error appears — **twelve hours of it at the quarters**: a first quarter
+  transited at 06:00 instead of 18:00, putting the moon in the wrong half of the
+  night and contradicting the property's own tooltip ("12 = FULL moon rising at
+  dusk; 6 = first quarter"). Only the hour angle was wrong; declination, the lit
+  fraction of the disc and the azimuth were already correct, so there was no
+  second inversion cancelling it out.
+- **Volumetric clouds can now fully clear and fully close.** The material bias
+  was fed `CoberturaActual * 2 − 1`. That value is not a 0–1 alpha: it is a
+  coverage value clamped to `[Clear Coverage, Overcast Coverage]`, 0.1–0.9 by
+  default, so the bias only ever travelled **−0.8 … +0.8** while both the
+  comment above it and the header of `Scripts/crear_material_nubes.py` document
+  the contract as `Cloud_GlobalCoverage (-1 clear .. +1 overcast)`. The correct
+  alpha is `CoberturaNorm`, which normalises that range — the same fix that had
+  already been applied to the cloud layer altitude and thickness eleven lines
+  above, and missed here.
+- **The Blueprint nodes speak English.** UHT turns the `//` block above a
+  `UFUNCTION` into the node's tooltip, and 39 Blueprint-exposed functions had
+  that block in Spanish — including the ones the README sells by name. A
+  designer hovering *Get Sky Occlusion At* read *"SENSOR DE OCLUSION: fraccion
+  de cielo tapado sobre un punto…"*. The pattern was already invented inside
+  this plugin: the renderer carries explicit `meta = (ToolTip = "…")` on ~90
+  properties, so the maintainer's Spanish comment stays put and the buyer reads
+  English. The same treatment is now applied across the subsystem, and several
+  tooltips were rewritten rather than translated — `GetSkyOcclusionAt` now
+  states its trace channel, its cost and the player-pawn exclusion in the node
+  itself, and `GetSnowLineZ` carries the material contract that used to live
+  only in a code comment.
+- **The seven factory climate bands are English and translatable.** They shipped
+  as `Ecuatorial`, `Desertica`, `Mediterranea`, `Templada fria`… built with
+  `FText::FromString`. Two defects in one: they reach the buyer through
+  `GetClimateBandName()` — a `BlueprintPure` returning `FText`, the obvious node
+  for a weather-station HUD — and through `Weather.Band` / `Weather.Latitude`;
+  and `FText::FromString` is **not picked up by Gather Text**, so the header
+  promised localization and delivered a culture-invariant Spanish literal.
+  They are now `LOCTEXT` in the `JKWeather` namespace, the same one the seasons
+  and events already use, so they enter Unreal's localization pipeline and can
+  be translated without recompiling. Nothing compares against these strings, so
+  the rename is presentation-only.
+- **The last Spanish strings are gone from buyer-facing output.** The 1.5.0
+  changelog claimed "every buyer-facing string is now English"; ~14 lines had
+  survived it, including one that **switched language mid-sentence** inside the
+  auto-exposure warning — the very warning the README devotes a section to
+  ("…Auto Exposure settings\" y reinicia el editor"). The rest were the
+  renderer's actor-discovery block that the README tells buyers to read (`Sol
+  encontrado`, `Luna encontrada`, `SkyLight encontrada`, …), the `SENSORS`
+  header and site/ENSO console output, the `Weather.VFXTest` mode names, the
+  audio-loading label for hail, and `A TIERRA` for cloud-to-ground strikes. An
+  undocumented Spanish alias for the `Weather.Lightning` argument (`tierra`)
+  was removed as well. The medieval Castilian calendar preset stays Spanish —
+  that is its whole point — and is now marked `// JK_ES_OK`.
+  `Scripts/preflight_release.py` gained two checks that keep all of this from
+  quietly aging again: one greps Spanish stopwords inside `TEXT("…")` across
+  `Source/`, the other flags any Blueprint-exposed `UFUNCTION` whose comment
+  block is Spanish and that carries no explicit `ToolTip`. The second one
+  immediately caught a thirty-ninth function the manual sweep had missed.
+- **Electrical activity is no longer dead on clients.** `CalculateLightning`
+  sat entirely inside the Tick's authority branch, and it was the only place
+  that ever assigned `ElectricalActivity` and the only place that advanced
+  `SecondsSinceStrike`. On a client, therefore, `GetElectricalActivity()`
+  returned a flat **0 forever** and `GetSecondsSinceLastStrike()` stayed pinned
+  at the 0.0 the strike multicast writes — "a bolt just fell", permanently. Both
+  are public `BlueprintPure` nodes with no server-only warning, so any storm HUD
+  bound to them lied on every client. The second-order effect was worse:
+  `CalculatePrecipitation` gates hail on `GetElectricalActivity() > 0.55`, so a
+  **client could never render hail** while the server logged it in the diary.
+  The cell-maturity half now runs on both sides as `UpdateElectricalActivity()`;
+  only the strike *scheduler* — which draws from `WeatherRng` and multicasts —
+  stays server-side. Nothing new is replicated: maturity is derived from cloud
+  cover, storm precipitation, the active event and pressure, all of which the
+  client already has and all of which converge. Server behaviour is unchanged.
+- **The client's ENSO anomaly no longer freezes on join.** The indices
+  replicate and blend correctly, so the getters looked right — but
+  `RecomputeEnsoAnomaly()`, which turns them into the `AnomalyTotal` the
+  simulation actually consumes, was only called from the authority branch of
+  `AdvanceClock`. On a client it ran exactly twice (`Initialize` and the first
+  snapshot) and then the derived anomaly was stale for the rest of the session.
+  Cross a quarter boundary into La Niña (`PrecipIntensityScale` 0.7) and the
+  client stayed at 1.0: **~43 % more rain on the client than on the server**,
+  forever. It is now recomputed at the end of the client blend tick — pure
+  arithmetic, no RNG, no allocation.
+- **Seven public mutators were missing their authority guard.** 20 of the 27
+  were gated; these were not: `SetPrecipitationYearScale`, `SetMaritimeFactor01`,
+  `SetEnsoEnabled`, `SetClimateAnomaly`, `ForceEnsoIndex`, `SetWeatherState` and
+  `ResetWeather`. Two hang off console commands with no other guard —
+  `Weather.Drought` and `Weather.Enso` — and `multiplayer_guide.md` claimed in
+  as many words that those knobs "only shape the client's local prediction and
+  the next snapshot corrects it" and that "a client console cannot grief the
+  session". **Both sentences were false**, because `PrecipitationIntensity` and
+  `PrecipitationType` are not in `FJKWeatherState` and no snapshot corrected
+  them. Concretely: two clients in one storm, client A types `Weather.Drought 0`,
+  and A's rain is gone for the rest of the session — no particles, no rain
+  audio, no wet ground, clean lines of sight — while B is still in the downpour.
+  In a shooter that is a competitive advantage typed into a console. All seven
+  are now gated; `SetWeatherState` became a gated wrapper over a private
+  `ApplyWeatherStateInternal` so the client's first-snapshot sync (which must
+  run on a client) and the already-gated load/reset paths still work. The guide
+  has been corrected and its checklist now tests these specific commands.
+- **Weather events now last the same slice of a day at any day length.**
+  `ProcessWeatherEvent` advanced its clock with `DeltaTime * TimeMultiplier`.
+  Every other integration in the file goes through `GetGameHoursPerSecond()`,
+  which folds in **both** `TimeMultiplier` *and* `DayLengthRealMinutes`; this one
+  folded in only the first. So the fraction of a game day an event occupied was
+  inversely proportional to the length of the day — and the ini offers all four
+  lengths as first-class options:
+
+  | `DayLengthRealMinutes` | A 180 s event actually lasted |
+  |---|---|
+  | 5 (factory) | **14.4 game hours** — 60 % of the day |
+  | 60 | 1.2 h |
+  | 240 | 0.3 h |
+  | 1440 (real time 1:1) | **0.05 h = 3 game minutes** |
+
+  The same "storm" ranged from half a day to a three-minute shower: a factor of
+  288 across the ini's own range. Worse, the storm's own cloud ramp (`case 4`)
+  already integrated in game hours, so an event's intensity and its cloud cover
+  were running on two different clocks.
+  `EventDuration`, `EventElapsed` and both fades are now kept in **game hours**
+  and advanced with `GetGameHoursPerSecond()`. The public API does not change
+  shape: `ForceWeatherEvent` / `Weather.Event` still take **seconds**, now
+  defined on the *reference clock* — a 5-minute day at speed 1 — so `180` means
+  what it always meant at factory settings (14.4 game hours) and now means the
+  same thing at every day length. The natural generator's historical
+  `FRandRange(60, 300)` roll was converted once to `FRandRange(4.8, 24.0)`: same
+  single draw, so seeded runs keep their exact stream position.
+  **Save format v7.** v1-v6 saves are converted on load with the same constant;
+  since all four fields scale together, an in-flight event resumes at exactly
+  the same progress and only its total length changes. New automation test
+  `JKWeather.SaveState.V7EventHours` locks that invariant.
+- **The pressure latch no longer voids `WeatherSeed`, and the storm barometer
+  finally recovers.** The three weather events wrote straight onto
+  `PressureTarget` with monotone ratchets (`Max`/`Min`). That target is
+  integrated state, not something recomputed each tick, and it is persisted in
+  the save. Two consequences, both serious:
+  *(a)* `Min()` is a ratchet, so as a storm faded out and `1013 - 21*I` climbed
+  back toward 1013 the rising value was discarded — the target stayed at the
+  deepest pressure reached and the barometer **kept falling after the storm was
+  over**, which fed ~+25 cloud points back in and started rain hours after it
+  had cleared. The comment and `atmosphere_guide.md` had promised the opposite
+  ("recovers as the front passes") since 1.2.
+  *(b)* Worse and silent: the walk draws a new target whenever
+  `|P - PressureTarget| < 0.6`. With the heat-wave target latched at 1024 and
+  the whole draw range below it (Mediterranean summer draws in [1010.7, 1021.4];
+  Iberia in [1005.9, 1023.7]), `Max()` returned 1024 *every time*, so the
+  condition re-armed on the next frame and `WeatherRng.FRandRange` was called
+  **once per frame** for the rest of the event — roughly 7,000 draws in a 180 s
+  event at 60 fps, 3,500 at 30. Every front, event and lightning bolt afterwards
+  came out of a different point in the stream, so two machines with the same
+  seed and different frame rates diverged completely. `WeatherSeed` is sold as
+  "same seed, same history of fronts, events, El Niños and La Niñas"; it was
+  not. (The ENSO/PDO layer was always genuinely reproducible — it hashes
+  `(seed, year, quarter)` into a throwaway stream — so only half the promise
+  was broken.)
+  The event offset now lives in `GetPressureTargetWithEvent()`, applied to a
+  copy at the point of use with the same `Max`/`Min` semantics, so behaviour at
+  peak intensity is byte-identical to before while `PressureTarget` keeps the
+  front the walk drew. The pressure chases the effective target; the redraw test
+  still measures against the walk's own target, which during an event sits far
+  away — so it does not fire, and the RNG is not burned.
 - **`LatitudeDegrees` is clamped on the property, not just in the setters.**
   `SetLatitudeDegrees` and the save restore both clamped to -89..89, but the
   `UPROPERTY(Config)` had no `ClampMin`, so the ini could still set exactly 90:
@@ -218,28 +476,6 @@ save format stays v6.
   the dew point and the physical fog down with it. The drying now happens on the
   humidity *target*, the same route the heat wave already used. Same class of
   bug as the storm-coverage fix in 1.3.1.
-- **Dust haze drying now actually applies under an active fog bank.** The first
-  version of the fix above lived as an `else if` behind the physical-fog
-  branch: with a saturated fog bank (measured in the PIE bench: 24 consecutive
-  samples pinned at 99% relative humidity), the fog floor always won and the
-  dust haze dried nothing for the whole event. It now runs unconditionally,
-  after the precipitation and fog floors, which also matches the physics — a
-  warm, dry Saharan intrusion does not coexist with a fog bank, it dissolves
-  it (by lowering the dew point, not by touching the fog variable directly).
-- **Dust haze now actually reads as dry.** Measured in the PIE bench after the
-  precedence fix above: the drying magnitude (18 points per intensity unit)
-  only pulled relative humidity down to a 76-77% floor against the fog-floor
-  baseline (~92% under a fresh event) — noticeably less dry than what a
-  Saharan dust intrusion should feel like. Raised to 40 points/intensity;
-  the same measured scenario now bottoms out at 54%, with the same clean
-  progressive curve (no plateau, recovers on fade-out). Heat wave keeps its
-  original 18-point magnitude — only its precedence bug was in scope.
-- **Heat wave drying had the same precedence bug as dust haze, unfixed.** It
-  was still an `else if` behind the physical-fog branch, so a heat wave
-  starting under a saturated fog bank would also dry nothing. In practice it
-  rarely showed, because a heat wave brings sun and the fog model's own solar
-  term already pushes `PhysicalFog01` near 0 — but the underlying defect was
-  identical. Moved out of the chain alongside dust haze.
 - **The volumetric cloud layer now reaches its configured altitudes.** The base
   altitude and thickness lerps used `CoberturaActual` as their alpha, but that
   is a material coverage value living in `[Coverage (Clear), Coverage
@@ -359,14 +595,6 @@ save format stays v6.
   compared raw ints against magic numbers (`ActiveEvent == 1`, `== 5`,
   `PrecipitationType != 4`); they now compare through `EJKWeatherEvent` /
   `EJKPrecipitationType`.
-
-- **Losing an auto-found sky reference at runtime is no longer silent.** If a
-  user destroys the sun, moon, sky light, sky atmosphere, volumetric cloud,
-  height fog or wind source actor that the renderer auto-discovered in
-  `BeginPlay`, the pointer safely goes null (it is a tracked `UPROPERTY`) but
-  nothing said so — the affected effect just stopped, with no clue why. The
-  renderer now logs a one-time warning naming the lost reference the frame it
-  happens. Re-acquiring a replacement automatically is still backlog.
 
 ### Changed
 - `Show Debug HUD` (`bMostrarDebug`) now defaults to **off** on new renderer

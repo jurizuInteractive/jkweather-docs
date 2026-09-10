@@ -6,7 +6,7 @@ is coupled: barometric pressure leads clouds, wind and events; humidity, dew
 point and surface temperature drive fog, frost, wetness and snow; latitude and
 date drive the sun, the moon and the seasons.
 
-**Version 1.5.0 — UE 5.8 — code plugin (C++ source included) — requires the
+**Version 1.6.0 — UE 5.8 — code plugin (C++ source included) — requires the
 Niagara plugin (engine built-in).**
 
 ## What's included
@@ -56,7 +56,7 @@ Niagara plugin (engine built-in).**
   obstacles (an upwind trace fan from the camera) — an empty field is honestly
   quiet. Per-band **prevailing winds** (trades, westerlies, polar easterlies)
   make cloud drift and rain slant read coherently day after day.
-- Persistence (auto-save slot, state v6, backward compatible with v1-v5),
+- Persistence (auto-save slot, state v8, backward compatible with v1-v7),
   30-day weather diary, medieval-flavoured calendar, 34 console commands,
   in-game tuning panel (`Weather.Panel`), 17 material parameters published
   every tick.
@@ -241,7 +241,7 @@ geometry (`GetSolarAltitudeDegrees(bApparent)`, azimuth, declination, sunrise
 and sunset, day phase); precipitation (type, intensity, rate mm/h);
 altitude-aware queries (`GetTemperatureAt`, `GetSnowDepthAtZ`,
 `GetSnowDepthAtLocation`, `GetSnowLineZ`, `GetThermalTopZ`); events, band and
-history; full state save/load (`FJKWeatherState`, v6); network authority
+history; full state save/load (`FJKWeatherState`, v8); network authority
 (`HasWeatherAuthority`).
 
 Delegates (BlueprintAssignable): `OnNewDay`, `OnSeasonChanged`,
@@ -345,5 +345,29 @@ Distributed exclusively through Fab; use is governed by the Fab EULA. See
 
 ## Support
 
-See `CHANGELOG.md` for version history. Documentation of the internal physics
-lives as comments next to the code it describes.
+**Bugs and questions:** https://github.com/jurizuInteractive/jkweather-docs/issues
+**Private enquiries (licensing, commercial):** jurizu.interactive@gmail.com
+
+Issues are the preferred channel, and not out of formality: the answer stays
+searchable for whoever hits the same thing next. The bug form asks for the
+engine version, the platform, the **build configuration** and the **network
+mode** — those last two matter more than they look, because the 34 console
+commands do not exist in Shipping builds and several derived values are
+recomputed locally on a non-authoritative client.
+
+Please include the relevant lines from `Saved/Logs/<Project>.log` — the plugin
+logs under the `LogJKWeather` category — and the output of `Weather.Sensors`,
+which dumps the whole atmospheric state in one block. With those, most reports
+are diagnosable without a round trip.
+
+Before writing, two things answer most questions on their own:
+
+- **`CHANGELOG.md`** for version history and for the reasoning behind every
+  behaviour change. Fixes are written up with what broke and why, not just what
+  changed.
+- **`Docs/`** for the seven subsystem guides (atmosphere, climate bands,
+  electrical storms, precipitation VFX, sky FX, demo materials, multiplayer).
+  The physics itself is documented as comments next to the code it describes.
+
+If you hit something the docs do not cover, say so in the report — a gap in the
+documentation is a bug too.

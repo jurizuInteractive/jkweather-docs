@@ -43,9 +43,19 @@ Every state mutator (`SetSolarHour`, `SetTimeSpeed`, `ForceWeatherEvent`,
 is **server-authoritative**: called on a client it logs a warning and does
 nothing. Change the weather in server code (or the server's console) and it
 arrives replicated. `HasWeatherAuthority()` (BlueprintPure) tells you which
-side you are on. The inline tuning knobs (yearly rain scale, maritime factor,
-ENSO on/off) only shape the client's local prediction and the next snapshot
-corrects it - harmless by construction.
+side you are on.
+
+**All 27 public mutators are gated, with no exceptions.** That includes the
+tuning knobs (`SetPrecipitationYearScale`, `SetMaritimeFactor01`,
+`SetEnsoEnabled`, `SetClimateAnomaly`, `ForceEnsoIndex`) and the two heavy
+hammers, `SetWeatherState` and `ResetWeather`. An earlier version of this guide
+said those knobs were "harmless by construction" because the next snapshot would
+correct them. **That was wrong and it has been fixed.** `PrecipitationIntensity`
+and `PrecipitationType` do not travel in `FJKWeatherState`, so no snapshot ever
+corrected them: a client typing `Weather.Drought 0` cleared its own rain for the
+rest of the session - no particles, no rain audio, no wet ground, clean lines of
+sight - while everyone else stayed in the downpour. Do not rely on convergence
+to make an ungated mutator safe; gate it.
 
 Console commands go through the same mutators, so a client console cannot
 grief the session: `Weather.Speed 1000` on a client is a warning, not a
@@ -71,14 +81,51 @@ if a synchronized cinematic needs it.
 1. **PIE, listen server + 2 clients.** Same sun position, same clouds trend,
    same event on all three windows; thunder audible on all, once each.
 2. **Dedicated server + 2 clients.** Same as above; confirm the server log
-   shows the replicator spawn line and no renderer VFX/audio server-side.
+   shows the replicator spawn line and **no renderer VFX/audio server-side**.
+
+   > A note on doing this properly. PIE's *Play As Client* launches a server
+   > process from the **editor** binary, where Slate, the viewport and the
+   > renderer all exist even when unused — so it does not really exercise the
+   > `IsNetMode(NM_DedicatedServer)` guard that disables the renderer's tick.
+   > For that you need a real server binary, which needs a `Server` target in
+   > the host project:
+   >
+   > ```csharp
+   > public class MyProjectServerTarget : TargetRules
+   > {
+   >     public MyProjectServerTarget(TargetInfo Target) : base(Target)
+   >     {
+   >         Type = TargetType.Server;
+   >         DefaultBuildSettings = BuildSettingsVersion.Latest;
+   >         IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
+   >         ExtraModuleNames.Add("MyProject");
+   >     }
+   > }
+   > ```
+   >
+   > Package it with `RunUAT BuildCookRun ... -server -noclient`, launch with
+   > `MyProjectServer.exe <Map> -log -port=7777`, and connect a client with
+   > `open <ip>:7777`. In the server log you should see the weather subsystem
+   > start and the replicator spawn, and **no** `[WeatherRenderer]` lines
+   > creating Niagara systems, material instances or audio: the simulation runs
+   > on the server, the *painting* must not.
 3. **Late join.** Connect a client mid-storm: it must arrive already in the
    storm (no clear-sky flash), correct date, correct hour.
 4. **Latency.** `Net PktLag=60`, then `120`, then `250` (plus
    `Net PktLagVariance=30`): the sun must stay smooth (extrapolation), clouds
    must not rubber-band, events must start/end once.
 5. **Client mutation attempts.** From a client console: `Weather.Speed 50`,
-   `Weather.SetHour 3`, `Weather.Event 4` - each must warn and change nothing.
+   `Weather.SetHour 3`, `Weather.Event 4`, **`Weather.Drought 0`**,
+   **`Weather.Enso 2`**, **`Weather.Reset`** - each must warn and change
+   nothing. The last three are the ones that used to slip through.
+8. **Storm HUD on a client.** In a storm, `GetElectricalActivity()` must climb
+   on the client the same way it does on the server, and
+   `GetSecondsSinceLastStrike()` must count up between bolts instead of sitting
+   at 0. Hail must be able to fall on a client (it is gated on electrical
+   activity > 0.55).
+9. **Quarter boundary.** Cross an ENSO quarter with a client connected: its
+   rain intensity must follow the server's new phase, not stay on the phase it
+   joined with.
 6. **Server clock changes.** On the server: `Weather.Speed 50`, then
    `Weather.SetHour 3` - clients must follow smoothly (hour slews the short
    way, no full-day spin).

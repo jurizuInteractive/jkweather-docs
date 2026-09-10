@@ -1,0 +1,122 @@
+name: Bug report
+description: Something behaves differently from what the documentation says.
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        **Before you write:** the fastest fix usually comes from the log. In the
+        console, run `Weather.Sensors` — it dumps the whole atmospheric state in
+        one block — and paste that together with the `LogJKWeather` lines from
+        `Saved/Logs/<Project>.log`. With those, most reports are diagnosable
+        without a back-and-forth.
+
+  - type: input
+    id: version
+    attributes:
+      label: JKWeather version
+      description: From `JKWeather.uplugin` (`VersionName`) or the CHANGELOG heading.
+      placeholder: "1.6.0"
+    validations:
+      required: true
+
+  - type: input
+    id: engine
+    attributes:
+      label: Unreal Engine version
+      placeholder: "5.8.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows (Win64)
+        - Mac
+        - Linux
+    validations:
+      required: true
+
+  - type: dropdown
+    id: config
+    attributes:
+      label: Build configuration
+      description: Behaviour can differ - the 34 console commands, for instance, do not exist in Shipping.
+      options:
+        - Development Editor (PIE)
+        - Development (packaged)
+        - Shipping (packaged)
+        - Dedicated server
+    validations:
+      required: true
+
+  - type: dropdown
+    id: netmode
+    attributes:
+      label: Network mode
+      description: Several subsystems behave differently on a non-authoritative client.
+      options:
+        - Standalone / single player
+        - Listen server
+        - Client
+        - Dedicated server
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and where it says so
+      description: A quote from the README, a guide in `Docs/`, or a node tooltip helps a lot - if the documentation is what is wrong, that is a bug too.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Console commands are the most reliable way to describe a repro.
+      placeholder: |
+        1. Weather.Speed 60
+        2. Weather.Event 4 180
+        3. Watch the barometer in Weather.Sensors
+    validations:
+      required: true
+
+  - type: textarea
+    id: sensors
+    attributes:
+      label: Output of `Weather.Sensors`
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Relevant `LogJKWeather` lines
+      description: From `Saved/Logs/<Project>.log`. Paste the surrounding lines, not just the error.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: ini
+    attributes:
+      label: Any non-default settings
+      description: Especially `DayLengthRealMinutes`, `WeatherSeed`, `LatitudeDegrees` and the climate profile - a lot of behaviour scales with the length of the day.
+      placeholder: "DayLengthRealMinutes=240, LatitudeDegrees=39"
+    validations:
+      required: false

@@ -1,0 +1,42 @@
+name: Question / how do I…
+description: How to use something, or why the simulation does what it does.
+title: "[Q] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask away. Two places answer most questions on their own, and they are
+        worth a look first:
+
+        - **`Docs/`** — seven guides: atmosphere, climate bands, electrical
+          storms, precipitation VFX, sky FX, demo materials and multiplayer.
+        - **`CHANGELOG.md`** — every behaviour change is written up with what
+          broke and why, not just what changed. If something behaves unlike an
+          older version, the reason is probably there.
+
+        If the answer *should* have been in the docs and was not, say so — that
+        is worth an issue of its own.
+
+  - type: input
+    id: version
+    attributes:
+      label: JKWeather version
+      placeholder: "1.6.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to do?
+      description: The goal, not just the API. Often there is a simpler route than the one being attempted.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+    validations:
+      required: false
