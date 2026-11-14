@@ -1,5 +1,63 @@
 # JKWeather — Changelog
 
+## Unreleased
+
+Work done since 1.6.0 that is not in a published build yet. This is a summary;
+the full engineering log ships inside the plugin as `CHANGELOG.md`.
+
+### Added
+
+- **Editor preview.** The sky runs in the level viewport without pressing
+  Play: pick the hour, the day of the year and the weather on the
+  `JKWeatherRenderer` (*Weather | Editor Preview*). Your lights, fog and
+  atmosphere get their values back when the preview stops, before every save
+  and before Play. Sequencer can scrub the time of day.
+- **Demo map inside the plugin**: `/JKWeather/Demo/Map_JKWeatherDemo`, a small
+  holm-oak dehesa lit only by the renderer.
+- **Curved worlds (planets)**: `SetLocalFrame`, `SetSphericalAltitude` and
+  `SetVisualVerticalScale`. With the defaults the plugin behaves exactly as in
+  a flat world.
+- **Works in a blank project**: the renderer's own post process widens the
+  auto-exposure range when the project has not, so noon is no longer white.
+- Soil water and pasture curing, background aerosol by climate band and
+  season, hail by episode with a stone-size getter, a NAO oscillator next to
+  ENSO/PDO, and seasonal distribution of rainfall.
+- Save state **v11**, backward compatible with v1-v10.
+- 45 console commands (was 34), and the reference ini now documents every
+  calibration key.
+
+### Changed
+
+- **Supported platform is Win64 only.** Mac and Linux were listed in
+  `PlatformAllowList` but had never been built, so they are no longer claimed.
+- Precipitation rate comes from a quantile model: the millimetres a band
+  declares are the millimetres it delivers over a long run.
+- Night starts at the end of civil twilight; the atmosphere stays lit after
+  sunset; daylight white balance is neutral; a storm no longer looks like a
+  sunny day; dust haze is ochre instead of grey.
+
+### Fixed
+
+- The plugin now builds with `RunUAT BuildPlugin` in every configuration
+  (Shipping did not compile before).
+- Fog delivers the visibility that was asked for.
+- Low-sun skies no longer burn out (diffuse light was counted twice).
+
+### Documentation corrections
+
+- Lightning travels as an **unreliable** multicast, not a reliable one as the
+  guide said. Under packet loss a client can miss a strike: resolve gameplay
+  that depends on lightning on the server.
+- The replicated state is about 2 KB in full, not ~130 bytes. It travels whole
+  only on join; afterwards only what changed.
+
+### Known issues
+
+- The 22° lunar halo renders as an opaque grey tube.
+- Wet ground is too mirror-like during storms.
+- The demo map's oak leaves do not react to wind or snow.
+
+
 ## 1.6.0
 
 Multiplayer, and the audit pass that had to happen before it could ship.

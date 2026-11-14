@@ -37,8 +37,6 @@ body:
       label: Platform
       options:
         - Windows (Win64)
-        - Mac
-        - Linux
     validations:
       required: true
 

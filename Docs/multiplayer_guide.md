@@ -9,9 +9,13 @@ game (listen or dedicated server) the plugin does the rest by itself.
 **The server simulates; clients render.** On `OnWorldBeginPlay`, the server's
 weather subsystem spawns an `AJKWeatherReplicator` (transient, hidden). Every
 simulation tick the subsystem pushes its full `FJKWeatherState` into it; the
-engine delta-replicates it at ~2 Hz. The whole struct is ~130 bytes, so the
-bandwidth cost is noise. `bAlwaysRelevant` means late joiners get the state
-the moment they connect - the first snapshot **is** their synchronization.
+engine delta-replicates it at ~2 Hz. The full struct is about 2 KB: 58 fields,
+four of them the arrays of the two learned distributions (cloud and
+precipitation, 408 floats in all). It travels whole only in the first snapshot; after that the engine
+sends just the properties that changed. The cost per client has not been
+measured on the wire, so profile it (`-networkprofiler=true`) if your game is
+bandwidth-bound. `bAlwaysRelevant` means late joiners get the state the moment
+they connect - the first snapshot **is** their synchronization.
 
 **Clients are network slaves that still feel alive.** A client does not
 decide anything: it never advances the calendar, rolls weather events,
@@ -25,10 +29,15 @@ tick it blends the continuous state toward the latest snapshot - the solar
 hour and the wind bearing blend **circularly**, so crossing midnight or north
 never swings the long way around.
 
-**Lightning is an event, not state.** Each strike travels as a *reliable*
-`NetMulticast` of `FJKLightningStrike`: every machine gets the same bearing,
-distance and power, and schedules the same distance-delayed thunder. The
-`OnLightningStrike` delegate fires on clients exactly like on the server.
+**Lightning is an event, not state.** Each strike travels as an *unreliable*
+`NetMulticast` of `FJKLightningStrike`: every machine that receives it gets the
+same bearing, distance and power, and schedules the same distance-delayed
+thunder. Unreliable is deliberate: a flash is cosmetic, and a burst of reliable
+multicasts in a storm could fill the reliable buffer and stall or drop a
+client. Under packet loss a client can therefore miss a strike, so **do not
+hang gameplay on a client-side `OnLightningStrike`** (damage, fires, quests):
+resolve those on the server, where every strike exists. The delegate still
+fires on clients for each strike that arrives.
 
 **Delegates fire on clients.** `OnNewDay`, `OnSeasonChanged`,
 `OnWeatherEventStarted/Ended` and `OnLightningStrike` are driven on clients
@@ -122,7 +131,9 @@ if a synchronized cinematic needs it.
    on the client the same way it does on the server, and
    `GetSecondsSinceLastStrike()` must count up between bolts instead of sitting
    at 0. Hail must be able to fall on a client (it is gated on electrical
-   activity > 0.55).
+   activity > 0.55). Since M-21 the hail roll is a hash of `WeatherSeed` and
+   the storm episode's start minute, so a client that sees the same episode
+   hails exactly when the server does.
 9. **Quarter boundary.** Cross an ENSO quarter with a client connected: its
    rain intensity must follow the server's new phase, not stay on the phase it
    joined with.

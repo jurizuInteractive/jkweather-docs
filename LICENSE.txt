@@ -69,6 +69,17 @@ part of the distributed package). Per-file provenance:
   ORIGINAL WORK. Vector-style icon rendered with the project's own
   generator toolchain (see AI DISCLOSURE above). No third-party imagery.
 
+- Content/Demo/Arte/ (holm oaks Encina_adulta_01 and Encina_vieja_01 with
+  their leaf clusters, granite boulder Granito_bolo_grande_01, materials and
+  textures): ORIGINAL WORKS modelled and textured procedurally with the
+  project's own AI-assisted Blender toolchain (October 2026). Photographs
+  were used only as colour references; none is part of any texture.
+  Exceptions, both CC0 (public domain, no attribution required):
+  Detalle/rock_08_* from Poly Haven "Rock 08" by Rob Tuytel, and
+  Detalle/Corteza/Encina_* derived from Poly Haven "Bark Willow 02".
+- Content/Demo/SM_DemoTerrain and Content/Demo/Map_JKWeatherDemo:
+  ORIGINAL WORKS, generated procedurally by the project's own tools.
+
 The NASA credit line above is also included in the product's Fab listing.
 
 NO WARRANTY

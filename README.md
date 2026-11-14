@@ -27,8 +27,9 @@ Niagara plugin (engine built-in).**
 - **Five weather events**: fog, heat wave, cold wave, storm, dust haze
   (calima) — natural generation plus console forcing.
 - **Multiplayer out of the box**: server-authoritative replication (~2 Hz,
-  ~130 B snapshots), smooth client extrapolation of the solar clock, reliable
-  lightning multicast, zero setup. Details and a test checklist in
+  delta-compressed; the full state is about 2 KB and travels whole only on
+  join), smooth client extrapolation of the solar clock, lightning as an
+  unreliable multicast (a lost strike never stalls the session), zero setup. Details and a test checklist in
   `Docs/multiplayer_guide.md`.
 - Climate bands by latitude with smooth transitions, southern-hemisphere
   season flip, and per-band **rain frequency**: annual precipitation shifts
@@ -56,8 +57,8 @@ Niagara plugin (engine built-in).**
   obstacles (an upwind trace fan from the camera) — an empty field is honestly
   quiet. Per-band **prevailing winds** (trades, westerlies, polar easterlies)
   make cloud drift and rain slant read coherently day after day.
-- Persistence (auto-save slot, state v8, backward compatible with v1-v7),
-  30-day weather diary, medieval-flavoured calendar, 34 console commands,
+- Persistence (auto-save slot, state v11, backward compatible with v1-v10),
+  30-day weather diary, medieval-flavoured calendar, 45 console commands,
   in-game tuning panel (`Weather.Panel`), 17 material parameters published
   every tick.
 
@@ -77,8 +78,11 @@ Niagara plugin (engine built-in).**
 | UE 5.3 and older | Not supported. `BuildSettingsVersion.Latest` and `EngineIncludeOrderVersion.Latest` in the target rules assume a modern include order. |
 | UE 4.x | Not supported. |
 
-Platforms: **Win64, Mac, Linux** (`PlatformAllowList` in the `.uplugin`).
-Consoles and mobile are not claimed and have never been built.
+Platforms: **Win64** (`PlatformAllowList` in the `.uplugin`). It is the only
+platform the plugin has been built and tested on. Mac, Linux, consoles and
+mobile are not claimed and have never been built; the code uses no
+Windows-only API that we know of, so add them to the allow list at your own
+risk if you need them.
 
 ### Content ships pre-generated
 
@@ -105,6 +109,16 @@ DX quirk of the Python setup flow, not a runtime/game issue — nothing under
 save your work and restart the editor before continuing rather than closing
 it directly afterward.
 
+## Demo map
+
+Open **Plugins → JKWeather Content → Demo → Map_JKWeatherDemo**: a small
+dehesa with holm oaks and granite, lit only by the JKWeatherRenderer. Select
+the renderer and change *Weather | Editor Preview* to see each sky without
+pressing Play, or press Play to run the full simulation. The ground uses
+`M_GroundDemo`, so it gets wet, frosted and snowy with the weather. The oak
+leaves do not react to wind or snow; `MF_WindBend` and `MF_ApplySnow` show how
+to add that to your own foliage.
+
 ## Quick start A — self-contained sky (recommended)
 
 1. Drop a **JKWeatherRenderer** actor into your level.
@@ -116,7 +130,8 @@ it directly afterward.
    SkyLight, SkyAtmosphere, VolumetricCloud, ExponentialHeightFog, sky
    spheres) — otherwise you will see two suns and doubled fog. A fresh empty
    level plus the renderer is the cleanest start.
-4. Press Play. `Weather.Panel` opens the live tuning panel.
+4. The sky already runs in the viewport (see *Editor preview*). Press Play for
+   the full simulation. `Weather.Panel` opens the live tuning panel.
 
 ## Quick start B — integrate with your existing sky
 
@@ -139,21 +154,43 @@ Keep your own lighting setup and let the system drive it:
 
 Anything left unassigned is searched for in the level, and skipped if absent.
 
-## Required project setting: auto exposure
+## Recommended project setting: auto exposure
 
 The renderer drives **physically real light values** — 100,000 lux from the sun
 at noon, 0.1 from a full moon. Unreal's default auto-exposure range is built for
-non-physical values and cannot span that, so as the sun climbs the image
-saturates to white.
+non-physical values and cannot span that, so the renderer's own post process
+widens the range when your project has not. A blank project therefore works
+straight away.
 
-Before anything else, enable **Project Settings → Rendering → Default Settings →
+If you tune exposure yourself, enable **Project Settings → Rendering → Default Settings →
 "Extend default luminance range in Auto Exposure settings"**, then restart the
-editor. In your Post Process Volume, keep Metering Mode on *Auto Exposure
+editor, so that exposure values in the editor read as EV100. In your Post Process Volume, keep Metering Mode on *Auto Exposure
 Histogram* and leave Min/Max EV100 at a range rather than pinned to one value
 (a fixed exposure cannot accommodate a real day-night cycle).
 
-If your project was created from a recent template this is usually already on.
-The plugin logs a warning at startup if it is not.
+The plugin logs a note at startup if it is off.
+
+With Lumen, a bright noon can also show Unreal's red viewport message *"Cached
+lighting in Lumen and real-time sky capture lighting is going to be clipped"*.
+That is the engine's default cached-lighting range ending at EV 12. To cover the
+full physical range, add `r.EyeAdaptation.CachedLightingPreExposure=8` under
+`[/Script/Engine.RendererSettings]` in `Config/DefaultEngine.ini`.
+
+## Editor preview
+
+The sky works in the level viewport without pressing Play. Select the
+`JKWeatherRenderer` and use **Weather | Editor Preview**: *Preview Hour*,
+*Preview Day Of Year* and *Preview Weather*. *Time Of Day Override* wins over
+*Preview Hour*, so scrubbing it in Sequencer moves the viewport sky.
+
+- It only touches the sky while it runs: lights, fog and atmosphere get their
+  values back when you turn it off, before every save and before Play. Edits you
+  make to those components during the preview are kept.
+- Sky, light, fog and exposure run the game code. Precipitation particles, audio,
+  lightning and sky FX (rainbow, halo, aurora, shooting stars) only run in Play.
+- With your own sky, a sun that is not **Movable** will not follow the hour.
+- A SkyAtmosphere set to *Planet Center At Component Transform* keeps the preview
+  off, so a curved-world sky stays as your game configured it.
 
 ## Configuration
 
@@ -187,13 +224,21 @@ recompiling. Until you do, the plugin runs on the C++ defaults and says so once
 in the log at startup.
 
 **Factory anchor.** Out of the box the site is latitude 0, longitude 0, UTC,
-and a new game starts on day 81 at 12:00 — the model's equinox with the sun at
-the zenith: a known-truth sky (sunrise 05:56:40, sunset 18:03:20 with the
-apparent horizon; exactly 06:00/18:00 with `Horizon Elevation = 0`) to
+and a new game starts on day 81 at 12:00 — exact solar noon with the sun all
+but overhead (89.25°): a known-truth sky (sunrise 05:56:40, sunset 18:03:20
+with the apparent horizon; exactly 06:00/18:00 with `Horizon Elevation = 0`) to
 calibrate exposure, sky and materials against before you move the world to
 its real coordinates with the ini, `SetSiteCoordinates()` or `Weather.Site`.
 The equation of time ships disabled so that anchor holds; enable it for the
 real analemma drift.
+
+The model's **equinox** is day 79, not day 81. Since the solar geometry gained
+the equation of the centre — the Earth's orbit is an ellipse, so the sun's true
+ecliptic longitude runs up to 1.9° ahead of or behind the mean one — day 79 is
+where the declination crosses zero, and that is the real 20th of March. The
+plugin's calendar is now aligned with the Earth's instead of two days behind it.
+Day 81 stays the start day because it is also the default of the save struct;
+ask for day 79 if you want the sun exactly over the equator.
 
 Renderer look-and-feel (volumes, intensities, halo, star brightness, eclipse
 toggle, refraction) is per-actor in Details, and most of it is also live in
@@ -221,12 +266,16 @@ Time & calendar: `Weather.SetDay` `Weather.SetHour` `Weather.Speed`
 `Weather.Sensors` `Weather.Band` `Weather.Enso` `Weather.History` — Persistence:
 `Weather.Save` `Weather.Load` `Weather.DeleteSave` `Weather.Reset [day]` —
 Forcing / testing: `Weather.Event 0-5` `Weather.Pressure` `Weather.Humidity`
-`Weather.Snow` `Weather.Drought` `Weather.ClearSky` `Weather.Lightning [ic|cg]`
+`Weather.Snow` `Weather.Drought` `Weather.Pasture` `Weather.ClearSky` `Weather.Lightning [ic|cg]`
 `Weather.Thermals` `Weather.Aurora` `Weather.VFXTest 0-4` `Weather.SkyTest 0-5`
-(includes solar/lunar eclipse) — Look: `Weather.NightSkyDarkness`
-`Weather.NightSkyLight` `Weather.StarBrightness` `Weather.StarTwinkle`
+(includes solar/lunar eclipse) `Weather.DebugPrecipitationVFX 0|1` (logs why a
+precipitation curtain is or is not visible: intensity, cover, live particles) — Look: `Weather.NightSkyDarkness`
+`Weather.NightSkyLight` `Weather.NightExposure` `Weather.TwilightLux` `Weather.TwilightSkyLight` `Weather.StarBrightness` `Weather.StarTwinkle`
 `Weather.FogVisibility <m>`
-`Weather.Panel`.
+`Weather.Panel` — Climate authoring (run headless with `-ExecCmds`; they
+simulate years in seconds and print `[Bench]`-style rows to the log):
+`Weather.Bench` `Weather.BenchStorm` `Weather.BenchProfile` `Weather.BenchIberia`
+`Weather.Calibrate` `Weather.FitSeasonPrecip`.
 
 Overrides stay forced until released (no argument, `0`, or a negative value
 depending on the command — each help text says which). Stopping PIE clears all
@@ -241,8 +290,32 @@ geometry (`GetSolarAltitudeDegrees(bApparent)`, azimuth, declination, sunrise
 and sunset, day phase); precipitation (type, intensity, rate mm/h);
 altitude-aware queries (`GetTemperatureAt`, `GetSnowDepthAtZ`,
 `GetSnowDepthAtLocation`, `GetSnowLineZ`, `GetThermalTopZ`); events, band and
-history; full state save/load (`FJKWeatherState`, v8); network authority
+history; full state save/load (`FJKWeatherState`, v11); network authority
 (`HasWeatherAuthority`).
+
+### Curved worlds (planets)
+
+JKWeather assumes a flat world by default. For a spherical world, your game
+tells the subsystem where the observer stands; nothing else changes:
+
+- `SetLocalFrame(FQuat)`: local East/North/Up frame to world at the
+  observer (local axes: North = +Y, East = -X, Up = +Z). Sun, moon, stars,
+  optical FX, wind, precipitation emitters, lightning and the under-roof
+  sensor all follow it.
+- `SetSphericalAltitude(PlanetCenter, SeaLevelRadiusCm)`: altitude becomes
+  the distance to the planet centre minus the sea-level radius
+  (`GetTemperatureAt`, `GetSnowDepthAtLocation`, `GetAltitudeZ`).
+- `SetVisualVerticalScale(Scale)`: visual-only compression of the volumetric
+  cloud layer for small planets (the meteorology keeps real kilometres).
+- Feed latitude/longitude with `SetSiteCoordinates` as the observer moves.
+
+With the defaults (identity frame, scale 1, spherical altitude off) the
+plugin behaves exactly as in a flat world. The shipped `NS_Rain`, `NS_Snow`
+and `NS_Hail` read `User.LocalFrame` for their fall direction; custom
+precipitation systems should do the same (see
+`Docs/precipitation_vfx_guide.md`). Known gaps: Unreal's Exponential Height
+Fog is a flat Z plane, and the `SnowLineZ` / thermal-top MPC channels are
+world Z values.
 
 Delegates (BlueprintAssignable): `OnNewDay`, `OnSeasonChanged`,
 `OnWeatherEventStarted`, `OnWeatherEventEnded`, `OnPrecipitationChanged`,
@@ -351,7 +424,7 @@ Distributed exclusively through Fab; use is governed by the Fab EULA. See
 Issues are the preferred channel, and not out of formality: the answer stays
 searchable for whoever hits the same thing next. The bug form asks for the
 engine version, the platform, the **build configuration** and the **network
-mode** — those last two matter more than they look, because the 34 console
+mode** — those last two matter more than they look, because the 45 console
 commands do not exist in Shipping builds and several derived values are
 recomputed locally on a non-authoritative client.
 

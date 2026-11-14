@@ -18,6 +18,15 @@ respects the contract below works. Store them in the plugin Content:
 | SpawnRate     | float  | 0-3000 | Particles/s already scaled (Intensity × TasaMaxLluvia)|
 | WindVelocity  | Vector | cm/s   | World wind, GUSTS included                            |
 | Gust          | float  | 0-1    | Raw gust factor (for audio/extra sway)               |
+| LocalFrame    | Quat   | -      | Local East/North/Up frame to world (identity on a flat world). Curved worlds only, see below |
+
+**Curved worlds (`LocalFrame`).** On a planet, "down" is not -Z. The shipped
+systems handle it with two settings: `GravityForce` uses **Coordinate Space =
+Local** (the component is rotated to the local frame every tick), and the
+fall `AddVelocity` uses **Rotation Mode = Quaternion** with **Rotation
+Quaternion** linked to `User.LocalFrame`. On a flat world both are the
+identity, so the result is unchanged. Wind (`User.WindVelocity`) stays in
+world space.
 
 Create them in the **Parameters → User Parameters** tab of each system with those
 exact names (in English). The system must use `User.SpawnRate` as its rate;
@@ -84,7 +93,8 @@ that guarantees its inclusion.
 ## Hail, sleet and freezing rain (types 5 / 6 / 7)
 
 The subsystem already decides these on its own (sleet in the 0-2.5 C band,
-freezing rain under ~1 C, hail bursts of a few minutes inside storms). The
+freezing rain under ~1 C, hail bursts of 5-15 minutes inside storms, one roll
+per storm episode; `GetHailStoneDiameterMM()` gives the stone size). The
 renderer now maps them to particles and sound:
 
 | Type | Particles | Sound |
@@ -107,8 +117,9 @@ melts into audible rain above +2 C. Climb a mountain during a shower and watch
 it whiten — and hush.
 
 **Testing:** `Weather.VFXTest 3` forces hail, `4` forces sleet, `0` returns to
-simulation. Natural hail: `Weather.Event storm` and wait for a burst
-(`HailChancePerMinute`, ~2.5 min each).
+simulation. Natural hail: `Weather.Event storm` in a cool month; whether a
+storm hails depends on the freezing level (warm lowland storms rarely do).
+`HailChancePerMinute` is now an artistic multiplier on that probability.
 
 ## Dust haze particles (NS_Dust, optional)
 

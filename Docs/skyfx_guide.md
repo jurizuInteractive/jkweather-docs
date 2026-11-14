@@ -64,9 +64,10 @@ fraction of a second and travels across a random patch of sky. Key settings:
 ### Dust haze — *calima* (`Weather.Event 5`)
 A Saharan-style dust event. Thermodynamically it warms the air (about +3 C),
 drops humidity and biases toward anticyclonic pressure. Visually it tints the
-fog ochre (`CalimaTinte`), adds haze density (`CalimaNieblaExtra`) and raises the
-atmosphere's Mie scattering (`CalimaMieFactor`) so the sky turns
-milky-ochre and the Sun is veiled. It also drives the same volumetric-fog
+fog ochre (`CalimaTinte`), adds haze density (`CalimaNieblaExtra`) and adds aerosol
+optical depth (`DustHazeOpticalDepth`, default 0.8 at full strength; Saharan
+intrusions over Iberia measure 0.5-1.5) so the sky turns milky-ochre and the
+Sun is veiled. It also drives the same volumetric-fog
 extinction ramp as the Fog event (`ExtincionVolumetricaMax`, see the fog
 guide's god-ray note below), so a dense dust storm shows visible sunbeams
 too, not just a flat tint. Trigger it like any other event: `Weather.Event 5`.
@@ -91,18 +92,49 @@ low or no gravity. Same User Parameter contract as the other systems:
 
 ### Ambient turbidity (every day, not just dust haze)
 Dust haze above models the Saharan *extreme*; **Ambient Turbidity**
-(`bTurbidezAmbiental`) models the ordinary aerosol that is always in the air
-to some degree — humidity haze and wind-lofted dust — continuously, without
-forcing an event. It adds its own contribution to the atmosphere's Mie
-scattering (`TurbidezPorHumedad` above 40% relative humidity,
-`TurbidezPorViento` scaling with wind speed), weighted up to
-`TurbidezBoostHorizonte`x as the Sun or Moon nears the horizon (within 20
-degrees). That is the physical reason golden hour looks the way it does: at
-low angles light crosses far more atmosphere, so the same aerosol scatters
-and reddens it more, and the Sun reads as bigger and softer. It does **not**
-drive the volumetric-fog god-ray ramp (that stays opt-in via the Fog event
-and dust haze only) — turning volumetric fog on every ordinary humid day has
-a real GPU cost that this feature does not spend on your behalf.
+(`bTurbidezAmbiental`) models the ordinary aerosol that is always in the air,
+continuously, without forcing an event. It is declared in **physical units**:
+the aerosol optical depth at 550 nm (AOD), the quantity an AERONET sun
+photometer measures.
+
+- **From the climate band (default, `bAerosolFromClimateBand`):** every band
+  declares a seasonal background AOD (`Winter/Spring/Summer/AutumnAerosolOpticalDepth`,
+  same four anchors and cosine ease as the 850 hPa dew point). Factory values
+  are AERONET medians next to each band's analogue site, from 0.05-0.1 in
+  clean mid-latitudes to 0.3-0.5 in the Sahel and Arabia. The humidity
+  reference is the band's normal humidity for the day (`GetDeclaredHumidityPct`),
+  so on a typical day the sky carries exactly the declared AOD.
+- Manual mode (no profile, or your own site data): `BackgroundAerosolOpticalDepth`
+  (0.10, Caceres, Spain: AERONET 2005-2012, tau500 = 0.11 with Angstrom 1.38)
+  and `AerosolReferenceHumidity` below.
+- Humidity growth (Hanel): AOD x ((1-RH)/(1-RHref))^-gamma, with
+  `AerosolHygroscopicGamma` (0.5) and `AerosolReferenceHumidity` (0.63). Pick
+  the reference at which the growth factor equals its site mean, so the
+  declared AOD is also the delivered mean (the growth is convex: the
+  arithmetic mean humidity would bias it about +4%).
+- `WindDustOpticalDepth` (0.05) is added at full wind.
+- The total is turned into the sky atmosphere's exponential Mie layer:
+  scattering = omega x AOD / H, absorption = (1 - omega) x AOD / H, with
+  `AerosolSingleScatteringAlbedo` omega = 0.92 and H = the atmosphere's Mie
+  scale height (1.2 km).
+
+Golden hour needs no help: the sky atmosphere integrates the long slant path
+at low Sun angles, which is what reddens and softens the Sun.
+`TurbidezBoostHorizonte` is an artistic multiplier near the horizon and
+defaults to **1 (physical)**. With turbidity off, the level's own atmosphere
+is left as it was and only dust haze is added.
+
+*Before 1.x (Oct 2026)* the turbidity was unitless Mie added on top
+(`TurbidezPorHumedad` 4.0, `TurbidezPorViento` 1.5, `CalimaMieFactor` 8). At
+60% humidity that meant an AOD of about 1.2: a white sky and no visible cast
+shadows on an ordinary clear day. Those properties are retired (`_DEPRECATED`):
+values saved in levels still load and are ignored, and Blueprints that set
+them must move to the properties above.
+
+It does **not** drive the volumetric-fog god-ray ramp (that stays opt-in via
+the Fog event and dust haze only): turning volumetric fog on every ordinary
+humid day has a real GPU cost that this feature does not spend on your
+behalf.
 
 ### Blizzard — *ventisca* (emergent)
 There is **no blizzard command**: it emerges naturally when it is **snowing**
