@@ -19,7 +19,7 @@ body:
     attributes:
       label: JKWeather version
       description: From `JKWeather.uplugin` (`VersionName`) or the CHANGELOG heading.
-      placeholder: "1.6.0"
+      placeholder: "1.7.0"
     validations:
       required: true
 

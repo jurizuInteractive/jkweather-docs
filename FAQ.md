@@ -30,10 +30,22 @@ same slice of a day.
 
 ### Same `WeatherSeed`, different weather
 
-Two things to check first: both machines must be on **1.6.0 or later** (before
-that a latch in the pressure walk burned the random stream once per frame, so
-frame rate changed the outcome), and the seed has to be set before the first
-tick — it is read at `Initialize`.
+Check these first:
+
+- Both runs must be on **1.7.0 or later**. Before 1.7.0 the server simulated
+  one step per frame with that frame's duration, and the model is sensitive to
+  the step, so two runs with the same seed drifted apart within about 40 game
+  days. 1.7.0 simulates in fixed steps of game time (`FixedStepGameHours`).
+- `FixedStepGameHours` must be above 0 (0.01 by default); 0 brings back the
+  per-frame step.
+- The seed has to be set before the first tick: it is read at `Initialize`.
+- To be safe, keep the time settings the same: `DayLengthRealMinutes`, and
+  `Weather.Speed` set at BeginPlay. (Measured: a speed change applied 8 steps
+  later in one of two runs left a simulated century identical except for the
+  on-screen gusts, but this is not guaranteed for every setting.)
+
+On-screen gusts run on real time on purpose, so they can differ between two
+runs; they never feed the simulation or the diary.
 
 Note that only the **authoritative** side rolls the seeded stream. On a network
 client, hail timing is drawn from a separate, non-seeded stream on purpose, so

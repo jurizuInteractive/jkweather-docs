@@ -2,8 +2,24 @@
 
 ## Unreleased
 
-Work done since 1.6.0 that is not in a published build yet. This is a summary;
-the full engineering log ships inside the plugin as `CHANGELOG.md`.
+Nothing yet.
+
+## 1.7.0 (2026-11-14)
+
+Summary for buyers; the full engineering log (in Spanish) ships inside the
+plugin as `CHANGELOG.md`.
+
+Editor preview, curved worlds, a demo map, and a launch audit that checked
+every promise against a running build. The audit, a 529-year multiplayer soak
+and a dedicated-server comparison found that a seeded world did not really
+repeat its weather, that gusts froze in long sessions and that a corrupt save
+could poison the climate. Those are fixed below.
+
+**Behaviour changes you will see:** the server now simulates in fixed steps of
+game time, so a 1.6.0 seeded world will not replay the same days in 1.7.0; the
+diary's daily maximum gust is defined differently (see *Changed*); and if you
+pasted the 1.6.0 reference ini into your project, five ENSO keys in it are
+wrong (see *Upgrade notes*). Save format **v11**, loads v1-v10.
 
 ### Added
 
@@ -22,12 +38,31 @@ the full engineering log ships inside the plugin as `CHANGELOG.md`.
 - Soil water and pasture curing, background aerosol by climate band and
   season, hail by episode with a stone-size getter, a NAO oscillator next to
   ENSO/PDO, and seasonal distribution of rainfall.
+- **Fixed simulation step**: `FixedStepGameHours` (0.01 game hours) and
+  `MaxFixedStepsPerFrame` (20000) in the ini. See *Changed*.
 - Save state **v11**, backward compatible with v1-v10.
-- 45 console commands (was 34), and the reference ini now documents every
+- 45 console commands (was 34), and the reference ini documents every
   calibration key.
+- Tests: 34 automation tests (`JKWeather.*`), new ones for determinism across
+  frame rates, NaN/Inf repair, and the reference ini matching the C++ defaults.
 
 ### Changed
 
+- **The server simulates in fixed steps of game time.** It used to run one
+  step per frame with that frame's duration, and the model is step-sensitive:
+  two runs with the same seed drifted apart within about 40 game days.
+  Now the same seed and the same time settings give the same chronicle at any
+  frame rate. Measured: two dedicated servers at 30 and 500 ticks per second
+  wrote the same 1,947-day diary line for line. The sun and the gusts are
+  smoothed between steps for rendering. `FixedStepGameHours=0` restores the
+  old per-frame step. Clients are unchanged (they follow the server).
+- **Diary `MaxGustKmh` is the day's peak sustained wind × 1.5** (the gust
+  peak factor). It used to be the maximum of the on-screen gust noise, which
+  runs on real time: at accelerated time a game day spanned only seconds of
+  noise, so the recorded gust fell with the time speed (−16 % at 14-second
+  days) and depended on when `Weather.Speed` arrived. Expect values about 2 %
+  higher at real time and up to 22 % higher in heavily accelerated runs.
+  On-screen gusts are unchanged.
 - **Supported platform is Win64 only.** Mac and Linux were listed in
   `PlatformAllowList` but had never been built, so they are no longer claimed.
 - Precipitation rate comes from a quantile model: the millimetres a band
@@ -38,10 +73,45 @@ the full engineering log ships inside the plugin as `CHANGELOG.md`.
 
 ### Fixed
 
-- The plugin now builds with `RunUAT BuildPlugin` in every configuration
+- **Same `WeatherSeed`, different weather.** The README promised a chronicle
+  "immune to framerate"; it was not (0.2 % of days matched across two runs).
+  Fixed by the fixed step above.
+- **Gusts froze in long sessions.** The gust clock was a float that only grew;
+  after about 2^24 simulation steps (about 6 days of uptime at 60 fps with the
+  old per-frame step, or about 19 game years with the fixed step) each
+  increment fell below its precision and the gust stuck at one value. It is
+  now a double wrapped at an exact period of the noise, so gust values are
+  unchanged and never freeze.
+- **A NaN or an infinity in a save no longer poisons the climate.** Neither
+  `SetWeatherState`, nor loading, nor the replicated state checked for
+  non-finite numbers; one would spread through pressure, cloud and rain, and
+  the autosave kept it. `FMath::Clamp` did not help: with NaN it returns the
+  maximum (the hour became 23:59, cloud cover 100 %). Every float in the state,
+  the diary and the day in progress is now checked on entry; bad values go
+  back to their defaults, the rest of the save is kept, and the log names the
+  fields that were repaired.
+- **The reference ini counted ENSO six times.** `JKWeather_DefaultGame.ini`
+  promised to reproduce the C++ defaults but still carried five ENSO values
+  from before an internal correction; pasting it made equatorial rainfall vary
+  96 % from year to year (observed: 15-25 %).
+- The plugin builds with `RunUAT BuildPlugin` in every configuration
   (Shipping did not compile before).
 - Fog delivers the visibility that was asked for.
 - Low-sun skies no longer burn out (diffuse light was counted twice).
+
+### Upgrade notes
+
+- **If you pasted the 1.6.0 reference ini** into your project's
+  `DefaultGame.ini`, set these five keys (the 1.7.0 reference ini has them):
+  `EnsoCloudScalePct=0.0`, `EnsoHumidityScalePct=0.0`,
+  `EnsoPressureScaleHpa=1.0`, `EnsoPrecipScalePerIndex=0.0`,
+  `EnsoStormScalePerIndex=0.0`.
+- A seeded world started in 1.6.0 keeps its seed and loads fine, but the days
+  that follow will differ from what 1.6.0 would have produced.
+- Testing tip: a dedicated server at `NetServerMaxTickRate=1000` runs game time
+  up to ~4× faster than real time (an engine behaviour: waits under 1 ms are
+  skipped and `MinUndilatedFrameTime` floors each frame at 0.5 ms). Use 500 or
+  less for accelerated soaks.
 
 ### Documentation corrections
 
@@ -56,7 +126,11 @@ the full engineering log ships inside the plugin as `CHANGELOG.md`.
 - The 22° lunar halo renders as an opaque grey tube.
 - Wet ground is too mirror-like during storms.
 - The demo map's oak leaves do not react to wind or snow.
-
+- Climate follows latitude, not geography: there is no monsoon, so a tropical
+  site gets the right temperatures but not the real shape of its rainy season.
+- GPU cost has not been measured.
+- Some C++ property identifiers are in Spanish; the editor shows English
+  display names for most of them.
 
 ## 1.6.0
 

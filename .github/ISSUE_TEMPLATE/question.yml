@@ -22,7 +22,7 @@ body:
     id: version
     attributes:
       label: JKWeather version
-      placeholder: "1.6.0"
+      placeholder: "1.7.0"
     validations:
       required: true
 

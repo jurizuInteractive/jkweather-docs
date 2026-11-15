@@ -6,7 +6,7 @@ is coupled: barometric pressure leads clouds, wind and events; humidity, dew
 point and surface temperature drive fog, frost, wetness and snow; latitude and
 date drive the sun, the moon and the seasons.
 
-**Version 1.6.0 — UE 5.8 — code plugin (C++ source included) — requires the
+**Version 1.7.0 — UE 5.8 — code plugin (C++ source included) — requires the
 Niagara plugin (engine built-in).**
 
 ## What's included
@@ -50,8 +50,15 @@ Niagara plugin (engine built-in).**
   manual layer for scripted droughts or cursed biomes.
 - **Reproducible weather (new in 1.5)**: `WeatherSeed` in the ini — 0 rolls a
   fresh world; any other value makes fronts, events, lightning and the whole
-  climate chronicle a pure function of the seed, immune to framerate and
-  `Weather.SetDay` jumps. The resolved seed travels in the save.
+  climate chronicle a function of the seed and of the time settings. The
+  server simulates in fixed steps of game time (`FixedStepGameHours`, 0.01 h
+  by default) whatever the framerate: two dedicated servers at 30 and 500
+  ticks per second, with the same seed, wrote the same 1,947-day diary line
+  for line. The gusts you see run on real time on purpose and never feed the
+  simulation or the diary (its daily maximum gust is the day's peak sustained
+  wind × 1.5), so a speed change (`Weather.Speed`) applied at a different
+  moment changes only the on-screen gusts. The resolved seed travels in the
+  save.
 - **Two-layer wind audio (new in 1.5)**: a broadband turbulence rumble
   everywhere, and an aeolian howl that requires both a strong flow and nearby
   obstacles (an upwind trace fan from the camera) — an empty field is honestly
