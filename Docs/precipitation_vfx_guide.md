@@ -57,10 +57,28 @@ everything else is optional but recommended.
 
 ## NS_Snow (variation of the same skeleton)
 
-Same as above, with these changes: Sprite Size Uniform 2-5 (X=Y), Lifetime 4-7 s,
-fall (0, 0, -90 to -140), drift `User.WindVelocity` × 0.6, **Curl Noise Force**
-(Strength ≈ 60, Frequency ≈ 0.6) for the flakes' dance, Drag 1.2, Alignment =
+Same as above, with these changes: Sprite Size Uniform **4-8** (X=Y), Lifetime
+**2.6-3.2 s**, fall (0, 0, -90 to -140), drift `User.WindVelocity` × 0.6, **Curl
+Noise Force** (Strength ≈ 60, Frequency ≈ 0.6) for the flakes' dance, Alignment =
 `Camera Facing`. Alpha = `User.Intensity` × 0.8.
+
+**Snow must fall at about 1 m/s and ride the wind**, because the renderer
+assumes it (`VelocidadCaidaNieveCms` = 100, emitter `AlturaEmisorNieveCms` = 300
+above the camera, and it shifts the emitter upwind by fall time × wind):
+
+- **Gravity Force** = (0, 0, **-100**), not the rain's -1500.
+- **Drag** = **1.0**.
+- **Acceleration Force** before Drag, with **Acceleration** linked to
+  `User.WindVelocity`. With Drag 1 this makes the velocity tend to
+  wind + gravity: the flake drifts with the wind and falls at 1 m/s.
+- **Lifetime** about the time to fall the emitter height (3 m at 1 m/s);
+  nothing kills a particle at the ground.
+
+Built the rain way (gravity -1500, Drag 1.2, wind only as the initial velocity),
+flakes fell at the 10 m/s speed limit, spent most of their 4-7 s under the
+ground, and with wind the curtain landed 30-45 m from the player: a full-
+intensity snowfall showed no flakes on screen. The shipped `NS_Snow` has the
+values above.
 
 ## What the C++ does for you (don't duplicate it in the system)
 

@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Fixed: snowfall showed no flakes on screen (2026-11-16)
+
+A full-intensity snowfall (simulation snowing at 2 mm/h, ~6,600 live
+particles) left no visible flake in a Shipping game, and only four or five in
+calm air. `NS_Snow` had been built from the rain system and kept the rain's
+physics:
+
+- **Gravity -1500 with Drag 1.2 and a 10 m/s speed limit**: flakes fell at
+  about 10 m/s, not the ~1 m/s the renderer assumes. Born 3 m above the camera,
+  they reached the ground in 0.3 s and spent the rest of their 4-7 s life
+  below it (nothing kills them there).
+- **Wind only as the initial velocity**, braked toward zero by the drag. The
+  renderer shifts the emitter upwind for 3 s of drift, so at 35 km/h the
+  curtain landed about 44 m from the player.
+
+`NS_Snow` now has gravity -100, Drag 1.0 and an **Acceleration Force linked to
+`User.WindVelocity`**, so each flake falls at 1 m/s and drifts with the wind;
+lifetime 2.6-3.2 s (the fall from 3 m); flakes 4-8 cm instead of 2-5. Measured
+in the demo map: with 35 km/h of wind the snowfall now fills the view. Rain was
+checked the same way and is consistent (falls at ~10 m/s, mostly above ground).
+`Docs/precipitation_vfx_guide.md` gives the snow values and why.
+
 ### Corrections to the 1.7.0 notes (2026-11-14)
 
 A visual check of a packaged Shipping game found three things the 1.7.0 notes
