@@ -126,6 +126,18 @@ pressing Play, or press Play to run the full simulation. The ground uses
 leaves do not react to wind or snow; `MF_WindBend` and `MF_ApplySnow` show how
 to add that to your own foliage.
 
+**The oaks need Nanite Foliage**, which UE 5.8 ships off. Without it they
+render leafless, in the editor and packaged. Add to your project's
+`Config/DefaultEngine.ini`:
+
+```ini
+[/Script/Engine.RendererSettings]
+r.Nanite.Foliage=1
+```
+
+The first load of the demo map then builds the tree assemblies once (about
+16 minutes measured), and they stay cached.
+
 ## Quick start A — self-contained sky (recommended)
 
 1. Drop a **JKWeatherRenderer** actor into your level.

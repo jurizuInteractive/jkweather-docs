@@ -2,7 +2,18 @@
 
 ## Unreleased
 
-Nothing yet.
+### Corrections to the 1.7.0 notes (2026-11-14)
+
+A visual check of a packaged Shipping game found three things the 1.7.0 notes
+got wrong or left out. No code changed.
+
+- **Dust haze is not ochre.** The notes said it was; in the shipped build it
+  is grey. The ochre version was work in progress that is not in 1.7.0. Moved
+  to *Known issues*.
+- **The demo map needs `r.Nanite.Foliage=1`** in the project, or its oaks have
+  no leaves. Added to *Upgrade notes*.
+- The wet-ground issue is worse than "too mirror-like": in heavy rain the
+  ground reflects like a lake. *Known issues* now says so.
 
 ## 1.7.0 (2026-11-14)
 
@@ -69,7 +80,7 @@ wrong (see *Upgrade notes*). Save format **v11**, loads v1-v10.
   declares are the millimetres it delivers over a long run.
 - Night starts at the end of civil twilight; the atmosphere stays lit after
   sunset; daylight white balance is neutral; a storm no longer looks like a
-  sunny day; dust haze is ochre instead of grey.
+  sunny day.
 
 ### Fixed
 
@@ -101,6 +112,20 @@ wrong (see *Upgrade notes*). Save format **v11**, loads v1-v10.
 
 ### Upgrade notes
 
+- **The demo map needs Nanite Foliage.** Its holm oaks are Nanite assemblies
+  (trunk and branches plus thousands of instanced leaf bunches), and UE 5.8
+  ships Nanite Foliage off: without it the oaks render **leafless**, in the
+  editor and in a packaged game. Add this to your project's
+  `Config/DefaultEngine.ini`:
+
+  ```ini
+  [/Script/Engine.RendererSettings]
+  r.Nanite.Foliage=1
+  ```
+
+  This turns Nanite Foliage on for the whole project. The first time the
+  demo map loads with it, Unreal builds the tree assemblies (measured: about
+  16 minutes once, then cached); a packaged build then needs nothing else.
 - **If you pasted the 1.6.0 reference ini** into your project's
   `DefaultGame.ini`, set these five keys (the 1.7.0 reference ini has them):
   `EnsoCloudScalePct=0.0`, `EnsoHumidityScalePct=0.0`,
@@ -124,8 +149,11 @@ wrong (see *Upgrade notes*). Save format **v11**, loads v1-v10.
 ### Known issues
 
 - The 22° lunar halo renders as an opaque grey tube.
-- Wet ground is too mirror-like during storms.
-- The demo map's oak leaves do not react to wind or snow.
+- Wet ground is too mirror-like during rain: in heavy rain the demo ground
+  turns into a mirror that reflects the trees like a lake.
+- Dust haze renders grey, not ochre.
+- The demo map's oak leaves do not react to wind or snow (and need Nanite
+  Foliage to appear at all; see *Upgrade notes*).
 - Climate follows latitude, not geography: there is no monsoon, so a tropical
   site gets the right temperatures but not the real shape of its rainy season.
 - GPU cost has not been measured.

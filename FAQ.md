@@ -69,9 +69,25 @@ luminance range in Auto Exposure settings"**, then restart the editor. The plugi
 emits real lux values; without the extended range the auto-exposure clips. The
 renderer warns about this in the log on startup.
 
+### The oaks in the demo map have no leaves
+
+The demo oaks are Nanite assemblies (trunk and branches plus thousands of
+instanced leaf bunches), and UE 5.8 ships Nanite Foliage off. Without it they
+render leafless, in the editor and in a packaged game. Add this to your
+project's `Config/DefaultEngine.ini` and restart the editor:
+
+```ini
+[/Script/Engine.RendererSettings]
+r.Nanite.Foliage=1
+```
+
+The first load of the demo map then builds the tree assemblies once (about
+16 minutes on our test machine) and they stay cached. A packaged build needs
+nothing else.
+
 ### The console commands do not exist in my packaged build
 
-Correct, and intended: all 34 `Weather.*` commands live under
+Correct, and intended: all 45 `Weather.*` commands live under
 `#if !UE_BUILD_SHIPPING`. Use a Development build to drive them.
 
 ### On a client, the storm HUD reads zero / hail never falls
