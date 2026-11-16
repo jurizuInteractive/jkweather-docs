@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Fixed: rain turned the demo ground into a mirror (2026-11-16)
+
+In heavy rain the demo ground reflected the trees like a lake.
+`MF_ApplyWetness` (the wetness example that `M_GroundDemo` uses and that you
+can copy for your own ground) had two problems:
+
+- **Puddle coverage.** Puddles appeared where a world noise exceeded
+  `1 - wetness`, but the noise runs from 0 to 1 (mean 0.5): a soaked ground
+  (wetness 1.0, reached after 2-3 game hours of 2 mm/h rain) was almost all
+  puddle, and half the ground was puddle at wetness 0.5, which morning dew
+  alone reaches. The threshold is now `1 - 0.35 * saturate(2.5 * (wetness -
+  0.6))`: no puddles below 0.6 wetness (dew does not make them) and about a
+  fifth of the ground when soaked.
+- **Wet roughness.** All wet ground went down to roughness 0.10, nearly a
+  mirror. It is now 0.35: wet soil darkens and gleams a little but does not
+  reflect. Puddles stay at 0.03 (water).
+
+The function is changed in place, so materials that already use it keep their
+connections. Measured in the demo map: dark wet ground with scattered puddles
+that reflect the sky, instead of a continuous sheet of water.
+`Scripts/crear_materiales_demo.py` generates the same math.
+
 ### Fixed: snowfall showed no flakes on screen (2026-11-16)
 
 A full-intensity snowfall (simulation snowing at 2 mm/h, ~6,600 live
