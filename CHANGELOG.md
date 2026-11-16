@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Measured: GPU cost of the weather (2026-11-16)
+
+The 1.7.0 notes listed "GPU cost has not been measured". Measured now on an RTX
+5070 Ti at 1920 × 1080 (Development build, demo map, engine CSV profiler with
+`r.GPUCsvStatsEnabled 1`, about 2,000-3,000 frames per scene): the weather
+passes take **0.8 ms** on a clear night, **1.4 ms** on a clear day, **1.6 ms**
+in rain, **2.3 ms** in a storm and up to **3.6 ms** with dust haze under broken
+cloud at a low sun. Volumetric clouds are almost all of it (0.35-3.1 ms); sky
+atmosphere, fog, the sky-light capture and the precipitation particles add
+about 0.4 ms together. Full table in the README, *Performance*.
+
 ### Fixed: rain turned the demo ground into a mirror (2026-11-16)
 
 In heavy rain the demo ground reflected the trees like a lake.

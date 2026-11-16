@@ -349,6 +349,32 @@ CollectionParameter node): `NightFactor`, `CloudCoverage`,
 `SnowLineZ`, `GroundFrost`, `FogDensity`, `RelativeHumidity`,
 `LightningFlash`, `ThermalActivity`, `AuroraActivity`.
 
+## Performance
+
+GPU time of the weather passes, measured on an **NVIDIA GeForce RTX 5070 Ti**
+at **1920 × 1080**, Development build of a test project with the demo map,
+averaged over about 2,000-3,000 frames per scene with the engine's CSV profiler
+(`r.GPUCsvStatsEnabled 1`):
+
+| Scene | Weather passes | Whole frame (GPU) |
+|---|---|---|
+| Clear night | 0.8 ms | 3.4 ms |
+| Snow, 98 % cloud | 1.0 ms | 3.9 ms |
+| Dense fog | 1.4 ms | 4.2 ms |
+| Clear, 13:00 | 1.4 ms | 4.3 ms |
+| Rain | 1.6 ms | 4.5 ms |
+| Storm | 2.3 ms | 5.1 ms |
+| Dust haze, 87 % cloud | 2.5 ms | 5.3 ms |
+| Dust haze, 48 % cloud | 3.6 ms | 6.5 ms |
+
+"Weather passes" adds volumetric clouds (0.35-3.1 ms, almost all of the
+variation), sky atmosphere (~0.2 ms), height and volumetric fog (~0.15-0.2 ms),
+the sky-light capture (0.04-0.18 ms) and the precipitation particles with their
+GPU simulation (under 0.05 ms). Volumetric clouds dominate, and they cost most
+with broken cloud at a low sun. Sky atmosphere and fog would also run in a
+project with Unreal's own sky. Numbers on other GPUs, resolutions and scalability
+settings will differ; profile your own scene with `stat gpu`.
+
 ## Known limitations
 
 - In multiplayer, the weather **diary/history lives on the server** (client
