@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+### Added: `SeasonalRainShift`, the site's rainy season (2026-11-17)
+
+The factory profile goes by latitude only. Northern Mexico (28.6° N) got 61 %
+of its rain in winter, while the real Chihuahua gets its rain in
+July–September (the North American monsoon). The Sahel, India and Arizona
+have the same problem. The new ini key `SeasonalRainShift` (-1..1, default 0)
+fixes it:
+
+- `+1` moves the rain to summer (monsoon) and `-1` moves it to winter
+  (Mediterranean). Annual rain is kept.
+- At 28.6° N with `+1`, the rain moves from 61 % in winter to **68 % in
+  summer**, and the annual total goes from 156 to 150 mm.
+
+**How it works:**
+
+- Each factory band carries two calibrated tables:
+  `SummerRainShiftOffsetsPct` and `WinterRainShiftOffsetsPct`. They are
+  seasonal offsets added to the band's precipitation-field offsets, scaled by
+  the key and interpolated between bands.
+- Bands that already rain in that season keep an empty table, so the key never
+  works against its sign: the tropical band for `+1`; the Mediterranean, cool
+  temperate and subpolar bands for `-1`.
+- The desert band keeps about 75 mm of spring and summer rain that the cloud
+  field does not control, so `+1` only reaches a 43 % summer share there.
+- Table per band in `Docs/climate_bands_guide.md`, section *Rainy season*.
+
+**New for profile authors:**
+
+- `Weather.CalibrateRainShift [years] [iterations] [seed]` refits the tables
+  from the bench and prints the C++ lines.
+- The bench takes `SeasonalRainShift` and an in-memory profile
+  (`FSettings::ProfileObject`).
+- New test: `JKWeather.Climate.SeasonalRainShift`.
+
 ### Measured: GPU cost of the weather (2026-11-16)
 
 The 1.7.0 notes listed "GPU cost has not been measured". Measured now on an RTX

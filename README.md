@@ -275,7 +275,10 @@ climate of the original game remains as a legacy preset (`Weather.Profile
 off`). Each band sets temperatures, cloud percentages,
 wind, pressure variability, `AnnualPrecipMM` (rate **and** frequency) and
 event multipliers. `Weather.Band` prints the active band including its
-cloud-to-precipitation thresholds.
+cloud-to-precipitation thresholds. For monsoon or winter-rain sites,
+`SeasonalRainShift` (ini, -1..1) moves the band's rainy season toward summer or
+winter while keeping its annual rain. See `Docs/climate_bands_guide.md`, section
+*Rainy season*.
 
 ## Console commands (non-Shipping builds)
 
@@ -294,7 +297,7 @@ precipitation curtain is or is not visible: intensity, cover, live particles) �
 `Weather.Panel` — Climate authoring (run headless with `-ExecCmds`; they
 simulate years in seconds and print `[Bench]`-style rows to the log):
 `Weather.Bench` `Weather.BenchStorm` `Weather.BenchProfile` `Weather.BenchIberia`
-`Weather.Calibrate` `Weather.FitSeasonPrecip`.
+`Weather.Calibrate` `Weather.FitSeasonPrecip` `Weather.CalibrateRainShift`.
 
 Overrides stay forced until released (no argument, `0`, or a negative value
 depending on the command — each help text says which). Stopping PIE clears all

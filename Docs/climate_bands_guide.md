@@ -104,6 +104,53 @@ southern window (Oct–Apr) automatically.
 
 ---
 
+## 4b. Rainy season (`SeasonalRainShift`)
+
+The factory bands go by latitude only, so they cannot know about monsoons.
+For example, northern Mexico (28.6° N, between the desert and Mediterranean
+bands) gets most of its rain in winter, while the real Chihuahua gets its
+rain in July–September. You can fix that with one ini key; no profile asset
+is needed:
+
+```ini
+[/Script/JKWeather.WeatherSubsystem]
+SeasonalRainShift=1.0   ; -1..1: +1 = summer rain (monsoon), -1 = winter rain, 0 = band as-is
+```
+
+The key moves the band's rain between seasons and keeps its annual total. Each
+factory band has two calibrated tables of seasonal precipitation-field
+offsets: `SummerRainShiftOffsetsPct` and `WinterRainShiftOffsetsPct`, in the
+order spring, summer, autumn, winter. The key scales them linearly, and they
+are interpolated between bands like every other band field. `+1` targets
+15/60/20/5 % of the year's rain; `-1` targets 25/5/30/40 %.
+
+| Band at its centre | +1: summer share | -1: winter share |
+|---|---|---|
+| Equatorial (5°) | 33 → 60 % | 18 → 40 % |
+| Tropical (15°) | already 72 % (no change) | 4 → 39 % |
+| Desert (25°) | 25 → 43 %, annual +12 % | no useful effect |
+| Mediterranean (35°) | 1 → 60 % | already 63 % (no change) |
+| Cool temperate (45°) | 6 → 61 % | already 43 % (no change) |
+| Subpolar (55°) | 7 → 61 % | already 47 % (no change) |
+| Polar (75°) | 43 → 60 % | 4 → 40 % |
+
+- **Bands that already rain in that season** keep an empty table, so the key
+  never works against its own sign.
+- **The desert band** keeps about 52 mm of spring rain and 23 mm of summer rain
+  that the cloud field does not control. The key can only move the rest.
+- **Measured at 28.6° N with `+1`:** 156 → 150 mm a year, and the rain moves
+  from 61 % in winter to 68 % in summer.
+
+The test `JKWeather.Climate.SeasonalRainShift` checks this case.
+
+- **Author profiles:** fill the two tables in your own bands, or leave them
+  empty so the key has no effect on them. `Weather.CalibrateRainShift [years]
+  [iterations] [seed]` refits the factory tables and prints the C++ lines.
+- **Multiplayer:** the server and the clients read the same ini, so they agree
+  on this value.
+
+---
+
 ## 5. Transitions
 
 Changing latitude or profile does **not** produce an on-screen jump. The new band
