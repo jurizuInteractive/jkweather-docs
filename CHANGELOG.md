@@ -2,6 +2,46 @@
 
 ## Unreleased
 
+### Fixed: the 22° halo was an opaque tube at night and invisible by day (2026-11-17)
+
+The 22° halo had two problems.
+
+**The brightness was a fixed number.** The halo got the same emissive value
+(0.45 at its peak, half that under the moon) at noon and at midnight.
+
+- Under the night exposure (EV100 about 0) that is several times mid-grey, so
+  the lunar halo came out as a solid white ring.
+- Under the day exposure (EV about 14, a sky of thousands of cd/m²) the solar
+  halo could not be seen at all.
+
+Now its luminance follows its source. `HaloIntensidadMax` is the fraction of
+the sun's or moon's light that the cirrus veil sends into the ring, and the
+renderer turns it into cd/m² with the illuminance of the sun or moon light.
+
+**The ring had the wrong shape.** It was a symmetric band of uniform warm
+white with hard edges on both sides. `M_Halo22` now has:
+
+- a sharp, slightly reddish inner edge at 22°;
+- a white fade outward with a scale of about 1°;
+- no added light inside, as a real ice-crystal halo looks.
+
+The material is changed in place, so its parameters and blend mode are the
+same. `Scripts/crear_materiales_cielo.py` generates the same math.
+
+**Measured** in the demo map, with the halo forced and the camera aimed at it:
+
+| | Before | After |
+|---|---|---|
+| Moon at 32°, 0.084 lux | solid white ring | translucent ring, sharp inside, fading outward |
+| Sun at 66°, 91,000 lux | nothing visible | bright ring over the sky near the sun |
+
+**Upgrade note.** `HaloIntensidadMax` changes meaning, from an emissive value
+to a light fraction, and its default goes from 0.45 to 0.02. If you had set it
+by hand, use 0.01–0.05 (faint to vivid).
+
+The *SkyFX* guide also described old rainbow and halo conditions; both are
+updated.
+
 ### Added: `SeasonalRainShift`, the site's rainy season (2026-11-17)
 
 The factory profile goes by latitude only. Northern Mexico (28.6° N) got 61 %

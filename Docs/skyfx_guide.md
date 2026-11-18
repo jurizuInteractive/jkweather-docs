@@ -45,15 +45,31 @@ modulate the atmosphere, height fog and the existing Sun/Moon.
 
 ### Rainbow
 Appears in the **antisolar** direction (opposite the Sun) as the classic
-42-degree bow. It requires a **low Sun** (altitude between 2 and 42 degrees), a
-recently **wet surface** (`GetSurfaceWetness > 0.35`, i.e. just after rain) and
-a reasonably **clear, bright Sun** (fades with cloud cover). Intensity eases in
-and out smoothly. Key settings: `bArcoiris`, `ArcoirisIntensidadMax`.
+42-degree bow. It needs a **low Sun** (altitude between 2 and 42 degrees) and a
+shower that has **just stopped**: it shows for `VentanaArcoirisSegundos` (120
+real seconds by default) after the precipitation ends, under a **broken sky**
+(cover below about 80 %) with the Sun's disc clear. Intensity eases in and out
+smoothly. Key settings: `bArcoiris`, `ArcoirisIntensidadMax`,
+`VentanaArcoirisSegundos`.
 
 ### 22-degree halo
-A thin bright ring around the dominant luminary — the Sun by day, the Moon by
-night. It needs **thin cirrus** (moderate cloud cover, roughly 0.15–0.55) and
-**high humidity**. Key settings: `bHalo22`, `HaloIntensidadMax`.
+A ring 22 degrees around the dominant luminary — the Sun by day, the Moon by
+night — with a sharp, slightly reddish inner edge, a white fade outward and no
+added light inside, as a real ice-crystal halo looks.
+
+- **When it appears.** A thin cirrus veil makes it. Whether there is a veil
+  on a given day comes from the climate band's `CirrusFraction` (0.30 by
+  default; deserts have more).
+- **When it does not.** It fades under dense low cover and dies while it
+  precipitates.
+- **How bright it is.** It follows the light of its source:
+  `HaloIntensidadMax` is the fraction of the sun's or moon's light that the
+  veil sends into the ring (0.02 by default; 0.01 is faint and 0.05 vivid).
+  So it is as visible against the noon sky as against the moonlit sky, and
+  fainter under a crescent moon.
+
+Key settings: `bHalo22`, `HaloIntensidadMax`. `Weather.SkyTest 2` forces it
+for captures.
 
 ### Shooting stars
 Brief streaks on **clear nights** (cloud cover below 0.25, well after dusk).
