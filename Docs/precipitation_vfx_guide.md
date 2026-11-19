@@ -8,14 +8,14 @@ respects the contract below works. Store them in the plugin Content:
     Plugins/JKWeather/Content/VFX/NS_Rain.uasset
     Plugins/JKWeather/Content/VFX/NS_Snow.uasset
 
-(or assign them by hand on the actor: `Weather|Precipitation → SistemaLluvia/SistemaNieve`).
+(or assign them by hand on the actor: `Weather|Precipitation → RainSystem/SnowSystem`).
 
 ## User Parameters contract (written by the C++ every tick)
 
 | Parameter     | Type   | Range  | Meaning                                              |
 |---------------|--------|--------|------------------------------------------------------|
 | Intensity     | float  | 0-1    | Effective intensity (ceiling and transitions included)|
-| SpawnRate     | float  | 0-3000 | Particles/s already scaled (Intensity × TasaMaxLluvia)|
+| SpawnRate     | float  | 0-3000 | Particles/s already scaled (Intensity × MaxRainSpawnRate)|
 | WindVelocity  | Vector | cm/s   | World wind, GUSTS included                            |
 | Gust          | float  | 0-1    | Raw gust factor (for audio/extra sway)               |
 | LocalFrame    | Quat   | -      | Local East/North/Up frame to world (identity on a flat world). Curved worlds only, see below |
@@ -63,7 +63,7 @@ Noise Force** (Strength ≈ 60, Frequency ≈ 0.6) for the flakes' dance, Alignm
 `Camera Facing`. Alpha = `User.Intensity` × 0.8.
 
 **Snow must fall at about 1 m/s and ride the wind**, because the renderer
-assumes it (`VelocidadCaidaNieveCms` = 100, emitter `AlturaEmisorNieveCms` = 300
+assumes it (`SnowFallSpeedCms` = 100, emitter `SnowEmitterHeightCm` = 300
 above the camera, and it shifts the emitter upwind by fall time × wind):
 
 - **Gravity Force** = (0, 0, **-100**), not the rain's -1500.
@@ -83,9 +83,9 @@ values above.
 ## What the C++ does for you (don't duplicate it in the system)
 
 - **Camera tracking** with drift compensation: the emitter shifts against the wind
-  (`SegundosCompensacionDeriva`) so the curtain falls centered after drifting.
+  (`DriftCompensationSeconds`) so the curtain falls centered after drifting.
 - **Under cover**: an upward trace every 0.15 s → `Intensity` fades to 0 under
-  cover and returns on exit (`bAtenuarBajoTecho`, `VelocidadTransicionTecho`).
+  cover and returns on exit (`bAttenuateUnderCover`, `CoverTransitionSpeed`).
 - **Transitions**: drizzle→rain→storm→nothing blend in ~1 s; on stop `Deactivate()`
   is used, so the live drops finish their fall (no cuts).
 - **Types**: Drizzle/Rain/Storm feed NS_Rain with their intensity; Snow feeds
@@ -98,14 +98,14 @@ values above.
     Weather.VFXTest 0    ← back to the simulation
     Weather.Atmosphere    ← full report (mm/h and cm/h rates included)
 
-Tunables on the actor (`Weather|Precipitation`): `TasaMaxLluvia` (3000),
-`TasaMaxNieve` (1200), `AlturaEmisorSobreCamara` (900), `DerivaVientoVFX`,
-`SegundosCompensacionDeriva` and the `bVFXPrecipitacion` switch.
+Tunables on the actor (`Weather|Precipitation`): `MaxRainSpawnRate` (3000),
+`MaxSnowSpawnRate` (1200), `EmitterHeightAboveCamera` (900), `PrecipitationWindDrift`,
+`DriftCompensationSeconds` and the `bPrecipitationVFX` switch.
 
 ## Cooking note (the same trap as the MPC and M_Moon)
 
 A system loaded only by path can end up outside the buyer's package. Assigning
-`SistemaLluvia`/`SistemaNieve` on the demo map's actor creates the hard reference
+`RainSystem`/`SnowSystem` on the demo map's actor creates the hard reference
 that guarantees its inclusion.
 
 ## Hail, sleet and freezing rain (types 5 / 6 / 7)
@@ -124,7 +124,7 @@ renderer now maps them to particles and sound:
 **`NS_Hail` is optional.** Duplicate `NS_Rain`, make the particles fewer,
 larger, faster and whitish, keep the same User parameters (`Intensity`,
 `SpawnRate`, `WindVelocity`, `Gust`) and save it as `/JKWeather/VFX/NS_Hail`.
-The renderer picks it up automatically (or assign `SistemaGranizo` in Details).
+The renderer picks it up automatically (or assign `HailSystem` in Details).
 Without it there is no warning: hail falls back to the rain system at full
 blast, and the hail *sound* still plays, so the weather reads correctly anyway.
 
@@ -154,7 +154,7 @@ scripted, though — see step 0.
 
 `M_DustMote` is part of `Scripts/crear_materiales_precipitacion.py` (v1.1)
 alongside the other four precipitation materials — same procedural,
-texture-free generator, tinted to match `CalimaTinte`. Run it once from the
+texture-free generator, tinted to match `DustHazeTint`. Run it once from the
 Output Log (`py ".../Scripts/crear_materiales_precipitacion.py"`) before
 building the system below; you will not need to touch a single material
 node.
@@ -172,7 +172,7 @@ node.
    Location box below (2500/2500/200) plus ~100 cm of margin so a sprite
    born near the edge (radius up to 70, plus wind drift) doesn't get culled
    before it can fade out. This box is local to the component, so it does
-   NOT need to account for `AlturaEmisorCalima` — the C++ already moves the
+   NOT need to account for `DustEmitterHeightAboveCamera` — the C++ already moves the
    whole component there via `SetWorldLocation`. The C++ also imposes its own
    runtime bounds via `SetSystemFixedBounds`, but this keeps the in-editor
    preview from culling itself. Loop Behavior = `Infinite`.
@@ -205,7 +205,7 @@ PIE are Sprite Size, the Alpha multiplier, Curl Noise Strength and the wind
 velocity multiplier — everything else (activation, position, intensity) is
 already driven by the C++.
 
-The renderer places the emitter much lower than rain/snow (`AlturaEmisorCalima`,
+The renderer places the emitter much lower than rain/snow (`DustEmitterHeightAboveCamera`,
 default 250 cm above the camera vs. 900 cm) and does not apply the
 falling-rain drift compensation — it just follows the camera and the local
 wind. Test with `Weather.Event 5` (there is no dedicated `VFXTest` mode for
@@ -217,6 +217,6 @@ it, since it isn't a precipitation type).
 `Scripts/importar_audio_clima.py` from `Resources/SourceArt/Audio/lluvia_loop.wav`
 and `granizo_loop.wav` (procedural placeholders — drop your real WAVs over them
 and re-run the script with `REEMPLAZAR = True`). Volume follows intensity; under
-a roof the loop is attenuated and low-passed (`LluviaFiltroTechoHz`, 900 Hz by
+a roof the loop is attenuated and low-passed (`RainLowpassUnderCoverHz`, 900 Hz by
 default): the classic drumming-on-the-roof. Tunables in `Weather|Precipitation`:
-`VolumenLluvia`, `VolumenGranizo`, `TasaMaxGranizo`.
+`RainVolume`, `HailVolume`, `MaxHailSpawnRate`.

@@ -2,6 +2,69 @@
 
 ## Unreleased
 
+### Changed: the renderer's C++ names are in English (2026-11-19)
+
+The 1.7.0 known issues listed Spanish C++ identifiers. They are renamed now:
+
+- 159 public properties of `AJKWeatherRenderer`, for example
+  `IntensidadSolMediodia` → `SunIntensityAtNoon`, `CalimaColorCieloFuerza` →
+  `DustHazeSkyColorStrength` and `bNieblaDeValle` → `bValleyFog`.
+- The save game's `Estado` and `GuardadoUTC` → `State` and `SavedAtUtc`.
+- Three replicator members.
+
+The new names come from the display names the editor already showed, so the
+Details panel and Blueprint nodes look the same. Names keep their units
+(`Km`, `M`, `Kmh`, `Hz`, `Deg`, `Days`, `Hours`), and the fog settings share a
+`Fog` prefix.
+
+**Saved content keeps its values.** The new `Config/DefaultJKWeather.ini`
+carries a `[CoreRedirects]` entry for every rename. Verified with a Blueprint
+saved under the old names with ten non-default values of six types (float,
+int, bool, color, object, soft reference): all ten load into the new names.
+A save game written before the rename also resumes with its date. The six
+levels of the development project that hold a renderer read the same as before.
+
+**C++ code must use the new names.** Code that reads or writes these properties
+does not compile until it is updated. The full table is in
+`Docs/renamed_properties.md`. Console command names and material parameter
+names do not change; the value labels that commands like `Weather.StarBrightness`
+print now use the new property names.
+
+### Fixed: dust haze is ochre, not grey (2026-11-19)
+
+The 1.7.0 notes said the dust haze was ochre. In the shipped build it was
+grey (see the errata below). The physical dust absorption tint is right, but
+absorption is only 5–8 % of the dust extinction, so it barely shows: the sky
+stayed blue-grey.
+
+**The fix.** A dust haze now adds an extra absorption, in proportion to the
+dust extinction, with the spectrum that turns sunlight ochre. It is an
+artistic approximation calibrated to photos, not physics. What turns sky and
+ground ochre in a real haze is sunlight that has lost its blue to the dust,
+and this reproduces that.
+
+- `CalimaColorCielo` (Dust Haze Sky Color, default 1.7 / 1.2 / 0.4) sets the
+  spectrum.
+- `CalimaColorCieloFuerza` (Dust Haze Sky Color Strength, default 0.7) sets
+  the amount.
+- With 0 you get the old grey haze.
+
+**Measured** in the demo map at 17:00 with a full haze (optical depth 0.8):
+
+| | Sky R/Y | Sky B/Y |
+|---|---|---|
+| Before (grey) | 0.99 | 1.07 |
+| After | 1.15 | 0.80 |
+| Photos of a moderate Saharan haze (Almería) | 1.14–1.16 | 0.81–0.84 |
+
+A clear midday is unchanged (R/Y 0.54, B/Y 1.76 with and without the fix),
+because the extra absorption only acts on dust. For the extreme orange events,
+raise Dust Haze Optical Depth towards 2–3.
+
+A first version of this tint (strength 0.5, with the ochre of intense-haze
+photos as spectrum) turned the sky pink (B/Y 0.92): it absorbed too much
+green. That is why the default spectrum's green is 1.2.
+
 ### Fixed: the rainbow was invisible by day and drawn at 45° (2026-11-17)
 
 The rainbow had the same problem as the halo, plus a geometry error.

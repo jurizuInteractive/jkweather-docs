@@ -50,16 +50,16 @@ outer edge and with slightly brighter sky inside it.
 
 - **When it appears.** It needs a **low Sun** (altitude between 2 and 42
   degrees) and a shower that has **just stopped**. It shows for
-  `VentanaArcoirisSegundos` (120 real seconds by default) after the
+  `RainbowWindowSeconds` (120 real seconds by default) after the
   precipitation ends, under a **broken sky** (cover below about 80 %) with the
   Sun's disc clear.
-- **How bright it is.** It follows the sunlight: `ArcoirisIntensidadMax` is the
+- **How bright it is.** It follows the sunlight: `RainbowMaxIntensity` is the
   fraction of the sunlight that the rain curtain sends into the bow (0.015 by
   default; 0.005 is faint and 0.04 vivid). So it shows against the bright
   afternoon sky.
 - Intensity eases in and out smoothly.
 
-Key settings: `bArcoiris`, `ArcoirisIntensidadMax`, `VentanaArcoirisSegundos`.
+Key settings: `bRainbow`, `RainbowMaxIntensity`, `RainbowWindowSeconds`.
 `Weather.SkyTest 1` forces it for captures.
 
 ### 22-degree halo
@@ -73,33 +73,33 @@ added light inside, as a real ice-crystal halo looks.
 - **When it does not.** It fades under dense low cover and dies while it
   precipitates.
 - **How bright it is.** It follows the light of its source:
-  `HaloIntensidadMax` is the fraction of the sun's or moon's light that the
+  `HaloMaxIntensity` is the fraction of the sun's or moon's light that the
   veil sends into the ring (0.02 by default; 0.01 is faint and 0.05 vivid).
   So it is as visible against the noon sky as against the moonlit sky, and
   fainter under a crescent moon.
 
-Key settings: `bHalo22`, `HaloIntensidadMax`. `Weather.SkyTest 2` forces it
+Key settings: `bHalo22`, `HaloMaxIntensity`. `Weather.SkyTest 2` forces it
 for captures.
 
 ### Shooting stars
 Brief streaks on **clear nights** (cloud cover below 0.25, well after dusk).
-Frequency is `FugacesPorMinuto` (average per minute). Each streak lasts a
+Frequency is `ShootingStarsPerMinute` (average per minute). Each streak lasts a
 fraction of a second and travels across a random patch of sky. Key settings:
-`bEstrellasFugaces`, `FugacesPorMinuto`.
+`bShootingStars`, `ShootingStarsPerMinute`.
 
 ### Dust haze — *calima* (`Weather.Event 5`)
 A Saharan-style dust event. Thermodynamically it warms the air (about +3 C),
 drops humidity and biases toward anticyclonic pressure. Visually it tints the
-fog ochre (`CalimaTinte`), adds haze density (`CalimaNieblaExtra`) and adds aerosol
+fog ochre (`DustHazeTint`), adds haze density (`DustHazeExtraFog`) and adds aerosol
 optical depth (`DustHazeOpticalDepth`, default 0.8 at full strength; Saharan
 intrusions over Iberia measure 0.5-1.5) so the sky turns milky-ochre and the
 Sun is veiled. It also drives the same volumetric-fog
-extinction ramp as the Fog event (`ExtincionVolumetricaMax`, see the fog
+extinction ramp as the Fog event (`VolumetricExtinctionAtFullFog`, see the fog
 guide's god-ray note below), so a dense dust storm shows visible sunbeams
 too, not just a flat tint. Trigger it like any other event: `Weather.Event 5`.
 
 An optional Niagara system (**Dust System**, empty = `/JKWeather/VFX/NS_Dust`)
-adds airborne dust particles near eye level (`AlturaEmisorCalima`, much lower
+adds airborne dust particles near eye level (`DustEmitterHeightAboveCamera`, much lower
 than the precipitation emitter — dust hangs in suspension, it doesn't fall),
 driven by `GetDustHaze01()` and the local wind. Same degrade-gracefully rule
 as the thermal particles: without the asset, dust haze stays a sky/fog effect
@@ -118,7 +118,7 @@ low or no gravity. Same User Parameter contract as the other systems:
 
 ### Ambient turbidity (every day, not just dust haze)
 Dust haze above models the Saharan *extreme*; **Ambient Turbidity**
-(`bTurbidezAmbiental`) models the ordinary aerosol that is always in the air,
+(`bAmbientTurbidity`) models the ordinary aerosol that is always in the air,
 continuously, without forcing an event. It is declared in **physical units**:
 the aerosol optical depth at 550 nm (AOD), the quantity an AERONET sun
 photometer measures.
@@ -146,7 +146,7 @@ photometer measures.
 
 Golden hour needs no help: the sky atmosphere integrates the long slant path
 at low Sun angles, which is what reddens and softens the Sun.
-`TurbidezBoostHorizonte` is an artistic multiplier near the horizon and
+`HorizonGlowBoost` is an artistic multiplier near the horizon and
 defaults to **1 (physical)**. With turbidity off, the level's own atmosphere
 is left as it was and only dust haze is added.
 
@@ -166,14 +166,14 @@ behalf.
 There is **no blizzard command**: it emerges naturally when it is **snowing**
 and the **wind is strong** (between `VentiscaVientoMinKmh` and
 `VentiscaVientoMaxKmh` on the subsystem, 25–55 km/h by default). The snow VFX
-wind is boosted (`VentiscaVientoVFXExtra`, flakes go near-horizontal) and extra
-fog reduces visibility (`VentiscaNieblaExtra`). To see it: set a cold, snowy
+wind is boosted (`BlizzardWindMultiplier`, flakes go near-horizontal) and extra
+fog reduces visibility (`BlizzardExtraFog`). To see it: set a cold, snowy
 state and raise the wind (e.g. via a storm or by pushing the pressure gradient).
 
 ### Valley fog
 At **dawn** (roughly 04:00–09:00), when a dense fog bank is present, the fog's
-height falloff is raised (`ValleFalloffFactor`) so the bank hugs the ground and
-pools in low areas, then lifts as the morning warms. Key setting: `bNieblaDeValle`.
+height falloff is raised (`ValleyFogFalloff`) so the bank hugs the ground and
+pools in low areas, then lifts as the morning warms. Key setting: `bValleyFog`.
 
 ### Eclipses
 Real solar and lunar eclipses, gated on the **already-simulated lunar nodes**.
@@ -228,7 +228,7 @@ weather simulation. Set it back to `0` when you are done.
 - Dust haze and valley fog capture the atmosphere's base Mie scattering and the
   fog's base height falloff once at runtime, then modulate around those bases, so
   they respect whatever you author on the components.
-- Everything is off-by-default-safe: with `bEclipses`, `bArcoiris`, etc. disabled,
+- Everything is off-by-default-safe: with `bEclipses`, `bRainbow`, etc. disabled,
   or with the optical materials absent, the base weather is unchanged.
 
 
@@ -273,7 +273,7 @@ no argument to release back to the simulation.
 ### Settings
 
 Subsystem (**Weather|Convection**): `ConvectionWindCutoffKmh`, `ConvectionLCLFactorM`.
-Renderer (**Weather|SkyFX**): `bTermicas`, `TasaMaxTermica`.
+Renderer (**Weather|SkyFX**): `bThermals`, `MaxThermalSpawnRate`.
 
 
 ---
@@ -285,7 +285,7 @@ The "old Moon in the new Moon's arms": near new phase, sunlight bouncing off
 Earth faintly lights the Moon's dark side. The renderer computes its strength
 from the lunar elongation (strong near new, zero toward full) and writes it to
 the Moon material as the scalar **`Earthshine`**. Settings (**Weather|SkyFX**):
-`bLuzCenicienta`, `LuzCenicientaMax` (subtle, ~0.12).
+`bEarthshine`, `EarthshineMaxIntensity` (subtle, ~0.12).
 
 Note: the visible fill needs the Moon material to read the `Earthshine`
 parameter and add it to the unlit hemisphere. The bundled `M_Moon` may not do
@@ -302,7 +302,7 @@ with a **clear sky**, on a large billboard toward the pole (north in the norther
 hemisphere, south in the southern), using the optional material **`M_Aurora`**
 (built by `crear_materiales_cielo.py`: animated green-to-magenta curtains). If
 `M_Aurora` is absent, the aurora stays off. It is also published to the MPC as
-`AuroraActivity`. Settings (**Weather|SkyFX**): `bAurora`, `AuroraIntensidadMax`.
+`AuroraActivity`. Settings (**Weather|SkyFX**): `bAurora`, `AuroraMaxIntensity`.
 
 ### Commands
 

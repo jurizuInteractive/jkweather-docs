@@ -51,7 +51,7 @@ The wind rose points TOWARD where the wind blows, in the plugin's world frame
   - the **dawn dew**: with temperature pinned to the dew point, calm and no sun,
     the ground wakes up wet without having rained,
   - and the **renderer fog**: relative humidity scales the density (dry air 55% …
-    saturated 145%, adjustable with `NieblaFactorHumedad`).
+    saturated 145%, adjustable with `FogFromHumidity`).
 - **Precipitation** is translated to mm/h by type (drizzle <1, rain up to 8, storm
   12-30, snow in water equivalent) and from there:
   - it wets the ground (`GetSurfaceWetness`), which is later dried by sun, wind and
@@ -81,7 +81,7 @@ The renderer writes them every tick (the parameters must exist in the asset;
 | Parameter | Range | Content |
 |---|---|---|
 | `GroundWetness` | 0-1 | surface wetness (puddles, roughness, darkened albedo) |
-| `SnowCover` | 0-1 | snow cm / `NieveCmParaCubrir` (snow blending on terrain) |
+| `SnowCover` | 0-1 | snow cm / `SnowDepthForFullCoverCm` (snow blending on terrain) |
 | `RelativeHumidity` | 0-1 | subsystem RH (haze, condensation on glass, mold) |
 
 These are the atmosphere-layer channels only; the renderer publishes **17
@@ -91,7 +91,7 @@ in `Docs/MIGRACION_JKWeather.md`. A
 material still reading an old name silently receives the asset's default
 forever — run `Scripts/agregar_viento_mpc.py` to detect leftovers.
 
-`NieveCmParaCubrir` (12 cm by default) is adjusted on the renderer actor,
+`SnowDepthForFullCoverCm` (12 cm by default) is adjusted on the renderer actor,
 category **Weather|Atmosphere**.
 
 ## Console and panel

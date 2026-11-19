@@ -55,16 +55,16 @@ cattle. World direction of the bearing: `(-sin(b), cos(b), 0)`.
   lights up from within on the flashes.
 - **Cloud-to-ground strike**: additionally places a point light (300 m radius, no
   shadows) at the impact point: bearing + distance from the camera, with a
-  vertical trace to the ground. Impacts farther than `DistanciaVisualMaxM` are
+  vertical trace to the ground. Impacts farther than `MaxVisualDistanceM` are
   pulled closer to that radius so their light can be seen.
 - **Thunder**: scheduled with the data's delay (343 m/s). Closer than
-  `DistanciaTruenoCercanoM` the near **crack** plays; beyond that, the far
+  `NearThunderDistanceM` the near **crack** plays; beyond that, the far
   **rumble**. Volume by power and distance, random pitch so they don't sound
   cloned. 2D on purpose: thunder envelops, it isn't localized.
 - **Wind howl**: a 2D loop whose volume and tone follow the gusted speed
   (`GetWindSpeedWithGust`). A ^1.5 curve: the breeze is barely audible, the gale
-  howls and the gust "breathes" on top. It plays between `VientoAudibleDesdeKmh`
-  and `VientoVolumenMaxKmh`, storm or not.
+  howls and the gust "breathes" on top. It plays between `RumbleAudibleAboveKmh`
+  and `RumbleFullVolumeKmh`, storm or not.
 
 ## Included audio and how to replace it
 
@@ -92,13 +92,13 @@ To **replace** them you have two paths:
 
 ## Settings (Details and panel)
 
-In `Weather|Storm`: `bRayosVisuales`, `bTruenoAudio`, sounds, `VolumenTrueno`,
-`DistanciaTruenoCercanoM`, `DestelloEscala` (overall multiplier),
-`DestelloSkyIC` / `DestelloSkyCG` (SkyLight contribution per type),
-`DestelloLuzCG` (impact light) and `DistanciaVisualMaxM`.
+In `Weather|Storm`: `bLightningFlashes`, `bThunderAudio`, sounds, `ThunderVolume`,
+`NearThunderDistanceM`, `FlashScale` (overall multiplier),
+`SkyFlashIntraCloud` / `SkyFlashCloudToGround` (SkyLight contribution per type),
+`StrikePointLight` (impact light) and `MaxVisualDistanceM`.
 
-In `Weather|Wind`: `SonidoVientoLoop`, `VolumenViento`, `VientoAudibleDesdeKmh`
-and `VientoVolumenMaxKmh`.
+In `Weather|Wind`: `WindHowlSound`, `WindVolume`, `RumbleAudibleAboveKmh`
+and `RumbleFullVolumeKmh`.
 
 The live panel (`Weather.Panel`) includes "Thunder volume", "Wind volume" and
 "Lightning flash".

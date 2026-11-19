@@ -415,7 +415,7 @@ settings will differ; profile your own scene with `stat gpu`.
 ## Accessibility: reduced flashes
 
 Lightning is short, high-contrast light — the pattern photosensitivity
-guidelines warn about. The renderer's **Flash Scale** (`DestelloEscala`,
+guidelines warn about. The renderer's **Flash Scale** (`FlashScale`,
 Details -> Weather|Storm, also live in `Weather.Panel`) is the single knob for
 it, and it covers all three consumers at once (SkyLight pulse, the
 `LightningFlash` MPC channel and the ground-strike point light):
@@ -427,7 +427,7 @@ it, and it covers all three consumers at once (SkyLight pulse, the
 | `0.0` | No flash at all — thunder and rain still play, so the storm still reads |
 
 Wire it to your own accessibility menu rather than leaving it in the actor's
-Details panel. Thunder volume is separate (`VolumenTrueno`).
+Details panel. Thunder volume is separate (`ThunderVolume`).
 
 ## MPC channel names
 
@@ -489,6 +489,8 @@ Before writing, two things answer most questions on their own:
 - **`Docs/`** for the seven subsystem guides (atmosphere, climate bands,
   electrical storms, precipitation VFX, sky FX, demo materials, multiplayer).
   The physics itself is documented as comments next to the code it describes.
+  `Docs/renamed_properties.md` maps the old Spanish C++ names to the English
+  ones that replaced them in 1.8.
 
 If you hit something the docs do not cover, say so in the report — a gap in the
 documentation is a bug too.
