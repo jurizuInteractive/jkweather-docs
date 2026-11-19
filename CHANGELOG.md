@@ -2,6 +2,42 @@
 
 ## Unreleased
 
+### Fixed: the rainbow was invisible by day and drawn at 45° (2026-11-17)
+
+The rainbow had the same problem as the halo, plus a geometry error.
+
+**Brightness.** Its emissive value was a fixed 0.9 cd/m², against an afternoon
+sky of thousands of cd/m². Measured in the demo map with the rainbow forced and
+the camera aimed at it: sun at 14° and 24,000 lux, and nothing on screen.
+
+Now its luminance follows the sun, as the halo's does.
+`ArcoirisIntensidadMax` is the fraction of the sunlight that the rain curtain
+sends into the bow. The default is 0.015; 0.005 is faint and 0.04 vivid.
+
+**Geometry.** On the 50° plane the renderer places, the band of `M_Rainbow`
+ran from 41° to 48.5°, centred on 45°. A real primary bow runs from 40.6°
+(violet) to 42.4° (red). `M_Rainbow` now has:
+
+- the bow at 40.6–42.4°;
+- its brightest part next to the red edge, with a sharp outer edge;
+- slightly brighter sky inside the bow, as in a real one.
+
+It is changed in place with `Dehesa.ArcoirisPerfil`, and
+`Scripts/crear_materiales_cielo.py` generates the same math (both checked
+for broken connections).
+
+**Measured** after the fix: the bow is clearly visible with the sun at
+24,000 lux. Its top is 28° above the horizon, as it should be with the sun at
+14°. Against a clear sky the colours look pastel; against the dark rain
+curtain where a real rainbow appears they stand out more.
+
+**Also fixed in the halo.** The light of the sun or moon already dims near the
+horizon, and the halo dimmed it a second time. Low halos are now a little
+brighter, as they should be.
+
+**Upgrade note.** `ArcoirisIntensidadMax` changes meaning, from an emissive
+value to a light fraction, and its default goes from 0.9 to 0.015.
+
 ### Fixed: the 22° halo was an opaque tube at night and invisible by day (2026-11-17)
 
 The 22° halo had two problems.

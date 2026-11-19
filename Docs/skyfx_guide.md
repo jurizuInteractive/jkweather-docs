@@ -45,12 +45,22 @@ modulate the atmosphere, height fog and the existing Sun/Moon.
 
 ### Rainbow
 Appears in the **antisolar** direction (opposite the Sun) as the classic
-42-degree bow. It needs a **low Sun** (altitude between 2 and 42 degrees) and a
-shower that has **just stopped**: it shows for `VentanaArcoirisSegundos` (120
-real seconds by default) after the precipitation ends, under a **broken sky**
-(cover below about 80 %) with the Sun's disc clear. Intensity eases in and out
-smoothly. Key settings: `bArcoiris`, `ArcoirisIntensidadMax`,
-`VentanaArcoirisSegundos`.
+primary bow, from 40.6° (violet) to 42.4° (red), brightest next to its sharp red
+outer edge and with slightly brighter sky inside it.
+
+- **When it appears.** It needs a **low Sun** (altitude between 2 and 42
+  degrees) and a shower that has **just stopped**. It shows for
+  `VentanaArcoirisSegundos` (120 real seconds by default) after the
+  precipitation ends, under a **broken sky** (cover below about 80 %) with the
+  Sun's disc clear.
+- **How bright it is.** It follows the sunlight: `ArcoirisIntensidadMax` is the
+  fraction of the sunlight that the rain curtain sends into the bow (0.015 by
+  default; 0.005 is faint and 0.04 vivid). So it shows against the bright
+  afternoon sky.
+- Intensity eases in and out smoothly.
+
+Key settings: `bArcoiris`, `ArcoirisIntensidadMax`, `VentanaArcoirisSegundos`.
+`Weather.SkyTest 1` forces it for captures.
 
 ### 22-degree halo
 A ring 22 degrees around the dominant luminary — the Sun by day, the Moon by
