@@ -2,6 +2,61 @@
 
 ## Unreleased
 
+### Changed: the subsystem's two largest functions are split (2026-11-19)
+
+`CalculatePrecipitation` (495 lines) and `CalculateAtmosphere` (477 lines)
+each did a dozen things in one body. They now call private methods in the same
+order as before.
+
+- **Precipitation:** convective potential, type and intensity from the cloud
+  field, rain bursts, rate by quantile, hail episode, graupel episode.
+- **Atmosphere:** relative humidity, dew point, feels-like, UV index, surface
+  temperature, ground frost, snowpack and rain gauge, surface wetness,
+  physical fog.
+
+Code that was copied in several places is now shared:
+
+- the absolute game hour (five copies);
+- the hail and graupel freezing level, survival and pressure factor, and their
+  splitmix64 generator;
+- the validation of the two learned distributions when loading a saved state.
+
+**Nothing changes in the simulation.** The climate bench (`Weather.Bench` and
+`Weather.BenchStorm`, seven bands, 5 and 3 years) prints the same 62 rows bit
+for bit before and after. The save, load and migration tests pass, as do the
+35 JKWeather tests and the 15 vegetation tests.
+
+The longest function left in the subsystem, `UpdateRelativeHumidity`, has 82
+lines of code. The rest of its length is the documentation of its fixes.
+
+### Changed: the renderer's tick is split into sections (2026-11-19)
+
+`AJKWeatherRenderer::Tick` was a single 1,330-line function that computed and
+applied everything: sun, moon, optical phenomena, night sky, sky light,
+exposure, material parameters, stars, fog, clouds, wind and the debug HUD. It
+had 39 local variables visible across all of it. The launch audit flagged it
+because a bug that lives in line 900 of one function cannot be tested on its
+own.
+
+It now runs in two steps, in the same order as before:
+
+1. `PrepararContextoFrame` computes what several sections share (hour, clouds,
+   wind, sun and moon position, eclipses) into a small struct on the stack.
+2. Thirteen methods each apply one section.
+
+The `Tick` itself is 80 lines. Nothing changes in behaviour or cost:
+
+- The 16 scenes of the visual test produce the same logged light, sky, fog and
+  cloud values as before, within the run-to-run variation of the real-time
+  storm events.
+- Screenshots match within the noise between two runs of the same build.
+- All 35 tests pass.
+
+**New in `stat JKWeather`:** one line per section. Measured on the demo map,
+the whole renderer tick costs 0.085–0.095 ms of CPU per frame, day or night.
+The largest part is the precipitation VFX and audio (0.04 ms), and every other
+section takes 0.01 ms or less.
+
 ### Changed: the renderer's C++ names are in English (2026-11-19)
 
 The 1.7.0 known issues listed Spanish C++ identifiers. They are renamed now:
