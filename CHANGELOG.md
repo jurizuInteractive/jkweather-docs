@@ -2,6 +2,62 @@
 
 ## Unreleased
 
+### Fixed: the night sky had ten times too many stars, and was not ours (2026-11-21)
+
+**Provenance correction.** `LICENSE.txt` said the starfield was an original
+synthetic texture and that the ESO-derived Milky Way panorama used during
+development had been replaced. Only the source art had been.
+`Content/T_Starfield_NoMoon` was never re-imported from it, so **every release
+up to and including 1.7.0 shipped that ESO-derived panorama.** ESO images are
+published under CC BY 4.0, which requires crediting ESO; for those releases
+the credit is "Milky Way panorama, ESO". The texture is now the synthetic
+one, and `LICENSE.txt` states what happened.
+
+**Too many stars.** Even the synthetic texture was far too dense. Counted on
+screen in a 90° view looking north at 45°:
+
+| Sky | Distinct stars |
+|---|---|
+| ESO panorama (shipped until now) | ~17,600 |
+| First synthetic texture | ~8,400 |
+| Real dark rural sky / pristine sky | ~550 / ~1,000 |
+| **Now** | **~570** (1,060 counting the faintest) |
+
+The generator scattered 103,800 stars with an arbitrary brightness curve. It
+now follows the real naked-eye magnitude distribution: 4,800 stars brighter
+than magnitude 6 over the whole sky, roughly tripling with each fainter
+magnitude.
+
+- **Each texel stores the star's linear flux.** So `StarBrightness` sets the
+  limiting magnitude: each factor of 2.5 adds or removes one magnitude.
+- **The default `StarBrightness` goes from 1 to 4,** a dark rural sky.
+- **The fictional Milky Way band** has the real surface brightness of the
+  Milky Way, in the same flux units as the stars: a faint, neutral glow
+  instead of a photo-like band.
+- **`Scripts/generar_texturas_fuente.py` now produces the shipped starfield
+  pixel for pixel.**
+
+**The moon washes out the stars.** Under a high full moon the sky is about 30
+times brighter than on a moonless night, and the limiting magnitude falls from
+about 6.3 to 4.5. The new `FullMoonSkyBrightening` (default 30) scales the star
+brightness by (1 + 30 × moonlight / full-moon light)^-0.55. Because the
+texture stores real flux, this removes the faint stars and the Milky Way first
+and keeps the bright ones, as on a moonlit night. Set it to 0 to keep the old
+behaviour.
+
+**Compression.** The starfield texture now uses BC7 instead of DXT1. DXT1
+stores colour in 5-6-5 bits, and at the band's levels (1–3 of 255) the extra
+green bit tinted it green and magenta. It costs about 5 MB more of video
+memory (10.7 MB instead of 5.3). `Scripts/crear_material_estrellas.py` now
+sets it.
+
+**Upgrade notes:**
+
+- If you set `StarBrightness` by hand, multiply your value by about 4 to keep
+  a similar density.
+- If your project replaced the starfield texture, `FullMoonSkyBrightening`
+  still dims it. Only the texture now in the plugin stores real flux.
+
 ### Added: the moon's position is a pure function, with tests (2026-11-20)
 
 The moon's geometry used to live inside the moon section of the renderer's
