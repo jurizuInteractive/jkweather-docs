@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+### Added: the moon's position is a pure function, with tests (2026-11-20)
+
+The moon's geometry used to live inside the moon section of the renderer's
+tick, so it could not be tested on its own. That is where R-01 survived for
+months: a sign error in the transit that put every phase except the full moon
+(the default) twelve hours off.
+
+`AJKWeatherRenderer::ComputeMoonPosition(FJKMoonGeometryInput)` is now a
+public static function, with no world or actors. It returns phase, ecliptic
+coordinates, declination, transit hour, hour angle, altitude and azimuth. The
+tick calls it, and the moon is where it was: the same light direction and lux
+as before in the demo map on day 172 at 23:30.
+
+Three new tests pin it, as the sun's geometry already was:
+
+- `JKWeather.Moon.TransitFollowsPhase`: the new moon culminates at noon, first
+  quarter at 18:00, full moon at midnight and last quarter at 06:00, due south
+  at 39° N. With R-01's sign put back on purpose, this test fails: it finds
+  first quarter at 06:00 and last quarter at 18:00.
+- `JKWeather.Moon.FullMoonOppositeSun`: the winter full moon culminates high
+  (74.4° at 39° N) and the summer one low (27.6°). In the southern hemisphere
+  the June full moon culminates high and due north.
+- `JKWeather.Moon.PhaseAndNodeCycles`: half a synodic month advances the phase
+  12 h and a full one brings it back. Over an 18.6-year nodal cycle, the
+  monthly maximum declination swings between the minor and major lunistices
+  (18.3° and 28.6°).
+
 ### Changed: the subsystem's two largest functions are split (2026-11-19)
 
 `CalculatePrecipitation` (495 lines) and `CalculateAtmosphere` (477 lines)
